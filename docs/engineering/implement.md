@@ -2,7 +2,7 @@
 
 ## What it does
 
-`implement` builds work that has already been decided. You point it at a ticket, a spec, or the plan you just agreed in the conversation, and it writes the code in the house style, drives [tdd](tdd.md) at the seams, typechecks as it goes, runs [review-changes](review-changes.md) at the end, and commits to the current branch.
+`implement` builds work that has already been decided. You point it at a ticket, a spec, or the plan you just agreed in the conversation, and it writes the code in the house style, drives [tdd](tdd.md) at the seams, typechecks as it goes, and runs [review-changes](review-changes.md) at the end. It works in its own worktree, so your main checkout and other sessions are untouched, and it ends by pushing the branch and opening a PR that closes the ticket.
 
 It never reopens the plan, and it doesn't stop at green tests. Its **definition of done** includes the paperwork that usually rots: journey links updated, the feature doc refreshed with its `verified-at` bumped, the user doc changed when the change is user-visible (often a PR in the marketing repo), and an ADR offered when a hard-to-reverse decision was made.
 
@@ -21,7 +21,7 @@ You invoke this by typing `/implement`; the agent won't reach for it on its own,
 
 ## Prerequisites
 
-It commits to the branch you're on; it doesn't create one. Ticket references resolve against the tracker [setup-standards](../setup/setup-standards.md) configured. The docs steps read `docs/agents/docs-targets.md` to find where feature and user docs live.
+It calls [worktree](worktree.md), which first sweeps away worktrees whose PRs have merged, then starts this work in a fresh worktree on a new branch. If you're already in a linked worktree, or you ask it to work in the current checkout, it works there instead. Ticket references resolve against the tracker [setup-standards](../setup/setup-standards.md) configured. The docs steps read `docs/agents/docs-targets.md` to find where feature and user docs live.
 
 ## Definition of done
 
@@ -39,11 +39,11 @@ A run is done when each line holds, or it has told you why one doesn't apply:
 
 **It finished, but my ticket is still open.**
 
-Expected. `implement` ends at the commit; it doesn't close tickets or tick acceptance criteria. Close and reconcile them yourself, or let the PR close them.
+Expected. `implement` ends at an open PR whose body says `Fixes #<n>`, so the ticket closes when the PR merges. It doesn't tick acceptance criteria; reconcile those yourself. With the local-markdown tracker there is no PR: it stops at the commit, and you close the ticket.
 
-**Can it open a PR instead of committing?**
+**Can it stop at the commit instead of opening a PR?**
 
-Not built in. Say so when you invoke it ("commit to a branch and open a PR"); [pr](pr.md) shapes the body.
+Say so when you invoke it ("commit, don't push"). Otherwise it pushes and opens the PR, with a body shaped by [pr](pr.md). The PR is also what lets the sweep remove the worktree later: once the PR merges, the next `/implement` or `/worktree` cleans it up.
 
 **review-changes says it can't see my changes.**
 
@@ -61,9 +61,10 @@ Because user docs live there, and a user-visible change without a doc update is 
 
 - It opens by restating what it will build, rather than asking what to build.
 - A `house-style` and a `tdd` Skill tool call appear in the trace.
-- The run ends in a commit, with the feature doc and journey links updated in the same diff.
+- The run ends with a PR URL, with the feature doc and journey links updated in the same diff.
+- Your main checkout's `git status` is untouched; the work happened in `.claude/worktrees/<issue>-<slug>`.
 - User-visible changes come with a docs PR, or an issue saying why not.
 
 ## Where it fits
 
-The build step of the main chain: [grill-with-docs](grill-with-docs.md) → [to-spec](to-spec.md) → [to-tickets](to-tickets.md) → `implement` → [review-changes](review-changes.md). Its neighbours are [tdd](tdd.md) (driven per seam), [project-docs](project-docs.md) and [product-modeling](product-modeling.md) (the done criteria). For the whole map, see [which-skill](../productivity/which-skill.md).
+The build step of the main chain: [grill-with-docs](grill-with-docs.md) → [to-spec](to-spec.md) → [to-tickets](to-tickets.md) → `implement` → [review-changes](review-changes.md). Its neighbours are [worktree](worktree.md) (where the work happens), [tdd](tdd.md) (driven per seam), [project-docs](project-docs.md) and [product-modeling](product-modeling.md) (the done criteria). For the whole map, see [which-skill](../productivity/which-skill.md).

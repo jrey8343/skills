@@ -37,6 +37,8 @@ flowchart TD
 
 Building means tdd at agreed seams, in the house style. Done means tests at those seams, a feature doc, a user doc if the change is user-visible, journey links updated, and an ADR if the decision was hard to reverse.
 
+Each build runs in its own git worktree, so sessions can work in parallel. `implement` sweeps away worktrees whose work has merged, starts a fresh one, and ends with a pushed branch and a PR. The next sweep removes that worktree once the PR merges (proven by git or the forge, never by the issue closing). Type `/worktree` to sweep at any time.
+
 ## 3. The audit loop
 
 ```mermaid

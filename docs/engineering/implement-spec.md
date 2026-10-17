@@ -27,6 +27,8 @@ You invoke this by typing `/implement-spec`; the agent won't reach for it on its
 
 Each implementer confirms its worktree is based on the integration branch, builds its ticket with [house-style](house-style.md) and [tdd](tdd.md), and merges the integration tip into its own branch before reporting done, so landing it is a fast-forward. A draft PR opens only if the tracker closes work through PRs or you ask for one.
 
+The integration branch has its own worktree, made by [worktree](worktree.md), so your main checkout stays free while the run goes on. At the end, the same skill's sweep, run with `--into <integration-branch>`, removes every implementer worktree whose branch has merged into the integration branch. The integration worktree is removed by a later sweep, once its PR merges.
+
 Docs work often spans tickets (one feature doc, one help page, several tickets). The final pass checks the definition of done across the whole spec, not just per ticket.
 
 ## Common questions

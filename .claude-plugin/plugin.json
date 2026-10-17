@@ -50,6 +50,7 @@
     "./skills/engineering/triage",
     "./skills/engineering/wayfinder",
     "./skills/engineering/wizard",
+    "./skills/engineering/worktree",
     "./skills/productivity/grill-me",
     "./skills/productivity/grilling",
     "./skills/productivity/handoff",

@@ -31,7 +31,7 @@ Run once per repo, roughly in this order:
    - **Yes** → **`/to-spec`** writes the spec. Before publishing, it runs **product-review** (is this worth building, against `PRODUCT.md`?) and **persona-review** (does it make sense to the avatars?). If they say rethink, it stops and asks. Then **`/to-tickets`** cuts tracer-bullet tickets with blocking edges, and you build with **`/implement`** per ticket (clear context between tickets) or **`/implement-spec`** for the whole graph in parallel.
    - **No** → **`/implement`** right here.
 
-   Building means **`/tdd`** at agreed seams, following **house-style** (functional core, imperative shell, vertical slices, TigerStyle). The definition of done includes the feature doc, the user doc when the change is user-visible, and journey links. The work closes with **review-changes**, a two-axis review (Standards and Spec). **`/pr`** shapes the PR body.
+   Building happens in its own **worktree**, which ends as a PR and is swept away once the PR merges. Building means **`/tdd`** at agreed seams, following **house-style** (functional core, imperative shell, vertical slices, TigerStyle). The definition of done includes the feature doc, the user doc when the change is user-visible, and journey links. The work closes with **review-changes**, a two-axis review (Standards and Spec). **`/pr`** shapes the PR body.
 
 Keep steps 1 to 3 in one context window until the tickets exist. See [PHASE-BOUNDARIES.md](PHASE-BOUNDARIES.md) for what to do between phases.
 
@@ -76,4 +76,5 @@ Model-invoked references the other skills pull in. Reach for them directly when 
 - **`/research`**: a background agent reads primary sources and leaves a cited Markdown file.
 - **wizard**: an interactive script for steps only a human can take (dashboards, credentials, secrets). The agent reaches for it when it hits a wall only you can pass.
 - **`/handoff`**: compact the conversation into a document for another session.
+- **`/worktree`**: sweep away worktrees whose PRs have merged. `/implement` also runs the sweep before it starts.
 - **writing-for-agents**: how to write skills and `CLAUDE.md` well.

@@ -100,6 +100,7 @@ Model-invoked:
 - [prototype](skills/engineering/prototype/SKILL.md): throwaway code that answers one design question. ([docs](docs/engineering/prototype.md))
 - [research](skills/engineering/research/SKILL.md): a background agent reads primary sources and leaves a cited file. ([docs](docs/engineering/research.md))
 - [wizard](skills/engineering/wizard/SKILL.md): an interactive script for steps only a human can do. ([docs](docs/engineering/wizard.md))
+- [worktree](skills/engineering/worktree/SKILL.md): build each piece of work in its own worktree, and sweep away worktrees once their PRs merge. ([docs](docs/engineering/worktree.md))
 
 ### Productivity
 
