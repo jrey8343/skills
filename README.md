@@ -1,5 +1,7 @@
 # jrey8343/skills
 
+[![skills.sh](https://skills.sh/b/jrey8343/skills)](https://skills.sh/jrey8343/skills)
+
 Agent skills for building production software the way I like it built:
 
 - **Architecture**: a functional core behind an imperative shell, vertical slices, and TigerStyle discipline (assertions, explicit limits, short functions, napkin math).
