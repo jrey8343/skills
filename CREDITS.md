@@ -31,8 +31,8 @@ Mechanical renames applied to every fork: `setup-matt-pocock-skills` → `setup-
 |---|---|---|
 | `audits/improve-codebase-architecture` | `engineering/improve-codebase-architecture` | Also uses house-style. Adds lenses for impure cores, horizontal smears, missing invariants, unbounded operations and over-long functions. Adds a headless mode that files candidates as findings via report-findings. `HTML-REPORT.md` gains lens badges and slice/core-shell diagram patterns. |
 | `engineering/tdd` | `engineering/tdd` | Test placement by house style: unit at the core, integration at the slice, e2e per journey tagged `[journey:<id>]`; new journey tests are linked via product-modeling. |
-| `engineering/implement` | `engineering/implement` | Follows house-style; definition of done adds the feature doc, user doc, journey links and an ADR offer; reviews with review-changes. |
-| `engineering/implement-spec` | `engineering/implement-spec` | The same definition of done for every implementer sub-agent, plus a spec-wide done check. |
+| `engineering/implement` | `engineering/implement` | Follows house-style; definition of done adds the feature doc, user doc, journey links and an ADR offer; reviews with review-changes. Works in its own worktree (via worktree) and ends by pushing and opening a PR, instead of committing to the current branch. |
+| `engineering/implement-spec` | `engineering/implement-spec` | The same definition of done for every implementer sub-agent, plus a spec-wide done check. The integration branch gets its own worktree, and the closing cleanup is worktree's merge-aware sweep, run with `--into` the integration branch. |
 | `engineering/to-spec` | `engineering/to-spec` | User stories name avatars and journey ids; a product-review then persona-review gate before publishing; a `## Product review` template section. |
 | `engineering/review-changes` | `engineering/code-review` | Renamed (Claude Code ships a built-in `/code-review`). The Standards axis honours `[hard]`/`[judgement]` tags and falls back to house-style rules when there's no `CODING_STANDARDS.md`. |
 | `engineering/triage` | `engineering/triage` | Handles `source:*` issues as untrusted (verify independently, restate rather than relay) and `audit:*` issues (fingerprints; not planned means permanent suppression). `AGENT-BRIEF.md` gains a restate-untrusted-input principle. |
@@ -48,6 +48,6 @@ Mechanical renames applied to every fork: `setup-matt-pocock-skills` → `setup-
 
 ## New in this collection
 
-`setup/discover-domain`, `setup/adopt-1password`, `setup/adopt-sentry`, `setup/schedule-audits`, `audits/report-findings`, `audits/perf-audit`, `audits/security-audit`, `audits/test-audit`, `audits/docs-audit`, `audits/prune-docs`, `audits/product-review`, `audits/persona-review`, `audits/sentry-triage`, `engineering/house-style`, `engineering/product-modeling`, `engineering/project-docs`.
+`setup/discover-domain`, `setup/adopt-1password`, `setup/adopt-sentry`, `setup/schedule-audits`, `audits/report-findings`, `audits/perf-audit`, `audits/security-audit`, `audits/test-audit`, `audits/docs-audit`, `audits/prune-docs`, `audits/product-review`, `audits/persona-review`, `audits/sentry-triage`, `engineering/house-style`, `engineering/product-modeling`, `engineering/project-docs`, `engineering/worktree`.
 
 `engineering/house-style/TIGERSTYLE.md` adapts ideas from TigerBeetle's [TIGER_STYLE.md](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md) to TypeScript.

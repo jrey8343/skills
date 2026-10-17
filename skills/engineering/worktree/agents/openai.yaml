@@ -1,0 +1,3 @@
+interface:
+  display_name: "Worktree"
+  short_description: "Work in worktrees; sweep merged ones"
