@@ -1,0 +1,5 @@
+interface:
+  display_name: "Adopt 1Password"
+  short_description: "Move secrets into 1Password op:// references"
+policy:
+  allow_implicit_invocation: false

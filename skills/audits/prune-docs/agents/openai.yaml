@@ -1,0 +1,5 @@
+interface:
+  display_name: "Prune Docs"
+  short_description: "Slim agent docs and clear stale content"
+policy:
+  allow_implicit_invocation: false

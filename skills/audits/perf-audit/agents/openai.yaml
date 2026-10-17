@@ -1,0 +1,5 @@
+interface:
+  display_name: "Perf Audit"
+  short_description: "Check performance against budgets"
+policy:
+  allow_implicit_invocation: false

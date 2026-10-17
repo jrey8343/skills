@@ -1,0 +1,5 @@
+interface:
+  display_name: "Docs Audit"
+  short_description: "Find missing and drifted feature and user docs"
+policy:
+  allow_implicit_invocation: false

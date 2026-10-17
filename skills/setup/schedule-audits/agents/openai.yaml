@@ -1,0 +1,5 @@
+interface:
+  display_name: "Schedule Audits"
+  short_description: "Run audits on a schedule in GitHub Actions"
+policy:
+  allow_implicit_invocation: false

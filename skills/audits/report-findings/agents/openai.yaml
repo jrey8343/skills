@@ -1,0 +1,3 @@
+interface:
+  display_name: "Report Findings"
+  short_description: "Dedupe and publish audit findings as issues"

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Adopt Sentry"
+  short_description: "Instrument errors, perf and feedback with Sentry"
+policy:
+  allow_implicit_invocation: false

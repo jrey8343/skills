@@ -1,0 +1,17 @@
+{
+  "name": "jrey8343",
+  "owner": {
+    "name": "Jared Reyes",
+    "url": "https://github.com/jrey8343"
+  },
+  "description": "Jared Reyes' skills for production engineering, as an installable Claude Code plugin.",
+  "plugins": [
+    {
+      "name": "jrey-skills",
+      "source": "./",
+      "description": "Production engineering skills: FCIS + vertical slices + TigerStyle architecture, scheduled audits (perf, security, tests, docs, product, persona, Sentry), and the plan, spec, ticket and implement flow.",
+      "category": "engineering",
+      "keywords": ["engineering", "skills", "audits", "architecture", "tigerstyle", "cloudflare", "sentry", "1password"]
+    }
+  ]
+}

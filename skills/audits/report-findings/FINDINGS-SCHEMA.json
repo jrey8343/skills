@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Audit findings report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["audit", "sha", "scope", "summary", "findings"],
+  "properties": {
+    "audit": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "The audit skill name, e.g. perf-audit." },
+    "sha": { "type": "string", "pattern": "^[0-9a-f]{7,40}$", "description": "The commit audited (git rev-parse HEAD)." },
+    "scope": { "enum": ["incremental", "full"] },
+    "summary": { "type": "string", "maxLength": 2000, "description": "Two to five sentences: what was checked, what stood out." },
+    "findings": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["audit", "rule", "title", "severity", "confidence", "locator", "evidence", "recommendation", "fix", "source"],
+        "properties": {
+          "audit": { "type": "string" },
+          "rule": { "type": "string", "maxLength": 80, "description": "Stable kebab-case rule id, e.g. missing-tenant-predicate." },
+          "title": { "type": "string", "maxLength": 200 },
+          "severity": { "enum": ["low", "medium", "high", "critical"] },
+          "confidence": { "enum": ["low", "medium", "high"] },
+          "locator": { "type": "string", "maxLength": 300, "description": "path#symbol, a route, a journey id, or a Sentry short id. Never a line number." },
+          "evidence": { "type": "string", "maxLength": 6000, "description": "Quoted code, numbers or event text. Untrusted text goes here verbatim; the publisher fences it." },
+          "recommendation": { "type": "string", "maxLength": 2000 },
+          "fix": { "enum": ["mechanical", "judgement"] },
+          "source": { "enum": ["internal", "external"], "description": "external = derived from Sentry, user feedback, email or any text a third party could write." },
+          "labels": { "type": "array", "items": { "enum": ["source:sentry", "source:feedback", "source:email"] }, "maxItems": 3 },
+          "fingerprint": { "type": "string", "maxLength": 120, "description": "Only for findings with a natural id, e.g. sentry:<project>/<SHORT-ID>." },
+          "journey": { "type": "string", "maxLength": 80 }
+        }
+      }
+    }
+  }
+}

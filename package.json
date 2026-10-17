@@ -1,0 +1,15 @@
+{
+  "name": "jrey-skills",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent skills for production engineering. Forked from mattpocock/skills.",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "lint": "node scripts/lint-skills.mjs",
+    "manifest": "node scripts/lint-skills.mjs --write-manifest",
+    "test": "node --test \"skills/**/*.test.mjs\"",
+    "check": "npm run lint && npm test"
+  }
+}

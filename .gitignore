@@ -1,0 +1,4 @@
+node_modules
+.claude
+.scratch-upstream-docs
+.DS_Store

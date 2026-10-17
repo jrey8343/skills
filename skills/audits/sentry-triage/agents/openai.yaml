@@ -1,0 +1,5 @@
+interface:
+  display_name: "Sentry Triage"
+  short_description: "Turn Sentry errors and feedback into issues"
+policy:
+  allow_implicit_invocation: false

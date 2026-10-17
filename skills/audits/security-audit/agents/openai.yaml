@@ -1,0 +1,5 @@
+interface:
+  display_name: "Security Audit"
+  short_description: "Whole-repo security audit filed as issues"
+policy:
+  allow_implicit_invocation: false

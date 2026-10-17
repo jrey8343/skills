@@ -1,0 +1,5 @@
+interface:
+  display_name: "Which Skill"
+  short_description: "Router over every skill and flow"
+policy:
+  allow_implicit_invocation: false

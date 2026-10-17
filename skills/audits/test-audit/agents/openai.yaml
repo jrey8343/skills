@@ -1,0 +1,5 @@
+interface:
+  display_name: "Test Audit"
+  short_description: "Find journeys and risky modules missing tests"
+policy:
+  allow_implicit_invocation: false

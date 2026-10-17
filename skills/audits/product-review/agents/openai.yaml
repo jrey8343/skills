@@ -1,0 +1,3 @@
+interface:
+  display_name: "Product Review"
+  short_description: "Does this feature improve or detract from the product?"
