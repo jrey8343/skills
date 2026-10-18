@@ -11,18 +11,23 @@
 //   assemble.mjs merge <run>                        grouping.json + threads/ -> candidates/
 //   assemble.mjs critic-candidates <run>            critic.json new threads -> candidates/
 //   assemble.mjs coverage <run>                     verdicts/ -> coverage.json, unassigned.json
-//   assemble.mjs final <run> [--repo OWNER/NAME] [--sha SHA] [--date YYYY-MM-DD]
+//   assemble.mjs final <run> --repo OWNER/NAME --sha SHA --date YYYY-MM-DD [--area FILTER] [--open-count N]
 //   assemble.mjs summary <run> [--page N]           what the reply leads with, from synthesis.json
+//   assemble.mjs keep <run> [--to DIR]              copy a finished run, without its checkout, somewhere durable
+//   assemble.mjs refresh <run> --open-count N [--date YYYY-MM-DD]
+//                                                   re-apply open-now.json and links.jsonl to a kept run
 //   assemble.mjs tracker <run> <id> --picked <id,id,...>   a thread tracker's body file and attach plan
+//   assemble.mjs folded <run> <id> <number>         record that a thread became thread tracker #number
 //
 // Every command exits 1 when a stage file is malformed or the stage is incomplete, naming the
 // file, so the orchestrator knows which agent to dispatch again.
 
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync, realpathSync } from "node:fs";
-import { join, resolve, basename } from "node:path";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync, cpSync, realpathSync } from "node:fs";
+import { join, resolve, basename, sep } from "node:path";
+import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
-import { renderIssueFull } from "./batch-issues.mjs";
+import { renderIssueFull, parseLinks } from "./batch-issues.mjs";
 
 export const membersMin = 3;
 export const candidatesMax = 150;
@@ -402,7 +407,7 @@ export function ownersOf(claims, rankOf, rankingOwners = []) {
 }
 
 export function buildSynthesis(inputs) {
-  const { meta, manifest, snapshot, digests, candidates, verdicts, critic, ranking, grouping, mergeReport, threadByRef, openNow } = inputs;
+  const { meta, manifest, snapshot, digests, candidates, verdicts, critic, ranking, grouping, mergeReport, threadByRef, openNow, openCount = null } = inputs;
   const workNumbers = manifest.batches.flatMap((batch) => batch.numbers);
   const workItems = new Set(workNumbers);
   const coverage = computeCoverage({ workItems, candidates, verdicts, critic });
@@ -415,7 +420,7 @@ export function buildSynthesis(inputs) {
   refuse([...ranked.keys()].filter((id) => !coverage.survivors.includes(id)), "ranking.json ranks candidates that did not survive");
   const threads = coverage.survivors.map((id) => threadEntry(candidates.find((candidate) => candidate.id === id), verdicts.get(id), ranked.get(id)));
   threads.sort((a, b) => a.rank - b.rank);
-  const closed = closedSinceSnapshot(workNumbers, openNow);
+  const closed = closedSinceSnapshot(workNumbers, openNow, openCount);
   const issues = workNumbers.slice().sort(byNumber).map((number) => issueEntry(number, snapshot.get(number), digests.get(number)));
   const needsTriage = issues.filter((issue) => issue.state === "needs-triage").map((issue) => issue.number);
   const rankOf = (id) => ranked.get(id).rank;
@@ -440,11 +445,16 @@ export function buildSynthesis(inputs) {
   };
 }
 
-function closedSinceSnapshot(workNumbers, openNow) {
+// With the issue tracker's own open count, the list must match it exactly, however many issues
+// closed (a run folded days later); without one, a large drop reads as a truncated list.
+function closedSinceSnapshot(workNumbers, openNow, openCount = null) {
   if (!openNow) return [];
+  if (openCount !== null && openNow.length !== openCount) {
+    throw new Error(`open-now.json lists ${openNow.length} issues but the issue tracker reports ${openCount} open: list with --limit and the run's filter`);
+  }
   const open = new Set(openNow);
   const closed = workNumbers.filter((number) => !open.has(number));
-  if (closed.length > Math.max(closedCountFloor, closedFractionMax * workNumbers.length)) {
+  if (openCount === null && closed.length > Math.max(closedCountFloor, closedFractionMax * workNumbers.length)) {
     throw new Error(`open-now.json lists ${openNow.length} issues, so ${closed.length} of ${workNumbers.length} would show as closed: did the list stop at a default limit? (gh issue list returns 30 without --limit)`);
   }
   return closed.sort(byNumber);
@@ -488,8 +498,9 @@ function pickedOwners(synthesis, picked) {
   return ownersOf(pickedClaims, (id) => rankOf.get(id), preferred);
 }
 
-// The issues a thread tracker attaches, and those it only lists, with the reason.
-export function trackerPlan(synthesis, id, pickedIds = [id]) {
+// The issues a thread tracker attaches, and those it only lists, with the reason. `folded` is
+// folded.json: the threads earlier fold sessions already turned into thread trackers.
+export function trackerPlan(synthesis, id, pickedIds = [id], folded = {}) {
   const thread = synthesis.threads.find((entry) => entry.id === id);
   assert.ok(thread, `no surviving thread with id ${id}`);
   const picked = new Set([...pickedIds, id]);
@@ -513,7 +524,21 @@ export function trackerPlan(synthesis, id, pickedIds = [id]) {
     else if (attach.length >= subIssuesMax) listed.push({ number, reason: `over the ${subIssuesMax} sub-issue limit` });
     else attach.push(number);
   }
-  return { thread, ...shellTitle(thread.name), attach, listed, existing_trackers: existing };
+  return { thread, ...shellTitle(thread.name), attach, listed, existing_trackers: existing, folded_as: folded[id] ?? null };
+}
+
+// Pure: a kept run's snapshot with parents and sub-issues as GitHub reports them now. Issues
+// that left the links list (closed since) keep the links they had.
+export function applyLinks(snapshotIssues, links) {
+  return snapshotIssues.map((issue) => (links.has(issue.number) ? { ...issue, ...links.get(issue.number) } : issue));
+}
+
+// Pure: where `keep` puts a run. Outside every repo, under the user's state directory, one
+// folder per repo, named by the run's timestamp.
+export function keepDestination({ run, repo, environment = process.env, home = homedir(), platform = process.platform }) {
+  assert.ok(/^[\w.-]+\/[\w.-]+$/.test(repo ?? ""), "synthesis.json has no OWNER/NAME repo: run final with --repo first");
+  const state = platform === "win32" ? (environment.LOCALAPPDATA ?? join(home, "AppData", "Local")) : (environment.XDG_STATE_HOME || join(home, ".local", "state"));
+  return join(state, "synthesize-backlog", repo.replace("/", "-"), basename(run).replace(/^synthesize-backlog-/, ""));
 }
 
 const neutraliseMentions = (text) => String(text ?? "").replace(/@(?=[A-Za-z0-9-])/g, "@​");
@@ -549,21 +574,31 @@ export function trackerBody(synthesis, plan) {
   return body;
 }
 
+function runLine(meta) {
+  const parts = [meta.repo || "unknown repo", meta.date && `run ${meta.date}`, meta.sha && `code ${String(meta.sha).slice(0, shaCharsShown)}`];
+  parts.push(meta.area && `area ${meta.area}`, meta.refreshed && `refreshed ${meta.refreshed}`);
+  return `RUN: ${parts.filter(Boolean).join(" · ")}`;
+}
+
 // The ranking agent wrote its prose before the open-now re-list, so every issue it names that
-// has closed since is marked where it appears.
-export function summaryLines(synthesis) {
+// has closed since is marked where it appears. Threads an earlier fold session turned into a
+// thread tracker are marked too.
+export function summaryLines(synthesis, folded = {}) {
   const closed = new Set(synthesis.closed_since_snapshot);
   const mark = (text) => String(text ?? "").replace(/(?<![\w/&#])#(\d{1,6})\b/g, (whole, digits) => (closed.has(Number(digits)) ? `${whole} (closed since the snapshot)` : whole));
+  const foldedNote = (id) => (folded[id] ? `, folded as #${folded[id]}` : "");
   const { urgent } = synthesis.ranking;
-  const lines = [`URGENT (${urgent.length})`, ...urgent.map((entry) => mark(`- #${entry.number}${entry.by ? ` by ${entry.by}` : ""}: ${entry.why}`))];
+  const lines = [runLine(synthesis.meta), "", `URGENT (${urgent.length})`, ...urgent.map((entry) => mark(`- #${entry.number}${entry.by ? ` by ${entry.by}` : ""}: ${entry.why}`))];
   if (closed.size > 0) lines.push("", `CLOSED SINCE THE SNAPSHOT: ${[...closed].map((number) => `#${number}`).join(" ")}`);
   const top = synthesis.threads[0];
   lines.push("", `START HERE: ${top ? `${top.rank}. ${top.name} [${top.id}]` : "no thread survived"}`, mark(synthesis.ranking.top_recommendation));
   lines.push("", "STRONG THREADS");
   for (const thread of synthesis.threads.filter((entry) => entry.strength === "Strong")) {
     const open = Object.entries(synthesis.claims).filter(([number, list]) => !closed.has(Number(number)) && list.some((entry) => entry.id === thread.id)).length;
-    lines.push(`${thread.rank}. ${thread.name} [${thread.id}] size ${thread.size}, /${thread.entry}, ${open} open issues`);
+    lines.push(`${thread.rank}. ${thread.name} [${thread.id}] size ${thread.size}, /${thread.entry}, ${open} open issues${foldedNote(thread.id)}`);
   }
+  const foldedOther = synthesis.threads.filter((thread) => thread.strength !== "Strong" && folded[thread.id]);
+  if (foldedOther.length > 0) lines.push("", "ALSO FOLDED", ...foldedOther.map((thread) => `${thread.rank}. ${thread.name} [${thread.id}]${foldedNote(thread.id)}`));
   const { counts } = synthesis;
   lines.push("", `COVERAGE: ${counts.survived} threads cover ${counts.covered} of ${counts.work_items} issues, ${counts.needs_triage_covered} of ${counts.needs_triage} needs-triage`);
   if (synthesis.unplaced.length > 0) lines.push(`UNPLACED: ${synthesis.unplaced.map((number) => `#${number}`).join(" ")}`);
@@ -786,8 +821,16 @@ function commandCoverage(run) {
   if (coverage.pending.length > 0) process.exitCode = 1;
 }
 
-function commandFinal(run, rest) {
-  const meta = { repo: flag(rest, "--repo") ?? "", sha: flag(rest, "--sha") ?? "", date: flag(rest, "--date") ?? "" };
+function openCountFlag(rest) {
+  const text = flag(rest, "--open-count");
+  if (text === undefined) return null;
+  const count = Number(text);
+  if (!Number.isInteger(count) || count < 0) throw new Error("--open-count must be a whole number");
+  return count;
+}
+
+// Builds synthesis.json from the run's stage files; final and refresh both end here.
+function writeSynthesis(run, meta, openCount) {
   const manifest = loadManifest(run);
   const { byNumber: digests } = loadDigests(run, manifest);
   const candidates = loadCandidates(run);
@@ -799,16 +842,44 @@ function commandFinal(run, rest) {
   const synthesis = buildSynthesis({
     meta, manifest, snapshot: loadSnapshot(run), digests, candidates, verdicts, critic: loadCritic(run), ranking,
     grouping: loadOptional(run, "grouping.json"), mergeReport: loadOptional(run, "merge-report.json"),
-    threadByRef: loadLensThreads(run).byRef, openNow: openNowRaw === null ? null : openNowNumbers(openNowRaw),
+    threadByRef: loadLensThreads(run).byRef, openNow: openNowRaw === null ? null : openNowNumbers(openNowRaw), openCount,
   });
   writeJson(join(run, "synthesis.json"), synthesis);
   console.log(JSON.stringify(synthesis.counts));
 }
 
+function commandFinal(run, rest) {
+  const meta = { repo: flag(rest, "--repo") ?? "", sha: flag(rest, "--sha") ?? "", date: flag(rest, "--date") ?? "", area: flag(rest, "--area") ?? "" };
+  writeSynthesis(run, meta, openCountFlag(rest));
+}
+
 const loadSynthesis = (run) => objectFile(join(run, "synthesis.json"), "synthesis.json; run final first");
+const loadFolded = (run) => loadOptional(run, "folded.json") ?? {};
+
+// A kept run, brought up to date: today's open issues strike what closed, and today's links
+// keep a member that gained a parent from being attached twice. The code is not re-checked.
+function commandRefresh(run, rest) {
+  const openCount = openCountFlag(rest);
+  if (openCount === null) throw new Error("refresh needs --open-count: the issue tracker's open count, listed with the run's filter");
+  const { snapshot_count: _snapshot, skipped_count: _skipped, ...meta } = loadSynthesis(run).meta;
+  if (existsSync(join(run, "links.jsonl"))) {
+    const snapshot = readJson(join(run, "snapshot.json"));
+    writeJson(join(run, "snapshot.json"), applyLinks(snapshot, parseLinks(readFileSync(join(run, "links.jsonl"), "utf8"))));
+  }
+  writeSynthesis(run, { ...meta, refreshed: flag(rest, "--date") ?? meta.refreshed ?? "" }, openCount);
+}
+
+function commandKeep(run, rest) {
+  const synthesis = loadSynthesis(run);
+  const destination = resolve(flag(rest, "--to") ?? keepDestination({ run, repo: synthesis.meta.repo }));
+  if (existsSync(destination)) throw new Error(`${destination} already exists: a run is kept once`);
+  const checkout = join(run, "code");
+  cpSync(run, destination, { recursive: true, filter: (path) => path !== checkout && !path.startsWith(`${checkout}${sep}`) });
+  console.log(JSON.stringify({ kept: destination }));
+}
 
 function commandSummary(run, rest) {
-  printPage(summaryLines(loadSynthesis(run)), flag(rest, "--page"), "of the summary");
+  printPage(summaryLines(loadSynthesis(run), loadFolded(run)), flag(rest, "--page"), "of the summary");
 }
 
 function commandTracker(run, rest) {
@@ -816,7 +887,7 @@ function commandTracker(run, rest) {
   if (!id || id.startsWith("--")) throw new Error("usage: assemble.mjs tracker <run> <id> --picked <id,id,...>");
   const picked = (flag(rest, "--picked") ?? id).split(",").map((entry) => entry.trim()).filter(Boolean);
   const synthesis = loadSynthesis(run);
-  const plan = trackerPlan(synthesis, id, picked);
+  const plan = trackerPlan(synthesis, id, picked, loadFolded(run));
   if (plan.attach.length === 0 && plan.existing_trackers.length === 0) {
     throw new Error(`thread ${id} has no member to attach (${plan.listed.map((entry) => `#${entry.number}: ${entry.reason}`).join("; ")}): open no thread tracker for it`);
   }
@@ -824,12 +895,24 @@ function commandTracker(run, rest) {
   const bodyPath = join(run, "trackers", `${id}.md`);
   writeFileSync(bodyPath, trackerBody(synthesis, plan));
   const warning = plan.attach.length < membersMin ? `only ${plan.attach.length} members to attach, fewer than a thread's ${membersMin}` : "";
-  console.log(JSON.stringify({ title: plan.title, title_shell: plan.title_shell, body_path: bodyPath, attach: plan.attach, listed: plan.listed, existing_trackers: plan.existing_trackers, warning }, null, 1));
+  const { title, title_shell: titleShell, attach, listed, existing_trackers: existingTrackers, folded_as: foldedAs } = plan;
+  console.log(JSON.stringify({ title, title_shell: titleShell, body_path: bodyPath, attach, listed, existing_trackers: existingTrackers, folded_as: foldedAs, warning }, null, 1));
+}
+
+function commandFolded(run, rest) {
+  const [id, numberText] = rest;
+  const number = Number(String(numberText ?? "").replace(/^#/, ""));
+  if (!id || !isIssueNumber(number)) throw new Error("usage: assemble.mjs folded <run> <id> <tracker number>");
+  if (!loadSynthesis(run).threads.some((thread) => thread.id === id)) throw new Error(`no surviving thread with id ${id}`);
+  const folded = { ...loadFolded(run), [id]: number };
+  writeJson(join(run, "folded.json"), folded);
+  console.log(JSON.stringify({ folded: Object.keys(folded).length, [id]: number }));
 }
 
 const commands = {
   issue: commandIssue, digests: commandDigests, threads: commandThreads, check: commandCheck, merge: commandMerge,
-  "critic-candidates": commandCriticCandidates, coverage: commandCoverage, final: commandFinal, summary: commandSummary, tracker: commandTracker,
+  "critic-candidates": commandCriticCandidates, coverage: commandCoverage, final: commandFinal, summary: commandSummary,
+  keep: commandKeep, refresh: commandRefresh, tracker: commandTracker, folded: commandFolded,
 };
 
 const invokedDirectly = process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));

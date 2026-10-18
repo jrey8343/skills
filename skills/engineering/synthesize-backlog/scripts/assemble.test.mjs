@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildCandidates, candidateFromThread, resolvedIssues, survival, verdictProblems, computeCoverage, ownersOf, buildSynthesis,
   rankingProblems, criticProblems, openNowNumbers, pageLines, trackerPlan, trackerBody, summaryLines, digestProblems, membersMin,
-  groupingProblems, shellTitle,
+  groupingProblems, shellTitle, applyLinks, keepDestination,
 } from "./assemble.mjs";
 
 const script = join(dirname(fileURLToPath(import.meta.url)), "assemble.mjs");
@@ -229,10 +229,10 @@ test("shellTitle single-quotes an agent-written name so the shell runs none of i
   assert.equal(shellTitle("x".repeat(300)).title.length, 256);
 });
 
-test("summaryLines leads with the urgent list and names the Strong threads", () => {
+test("summaryLines leads with the run and the urgent list, and names the Strong threads", () => {
   const synthesis = buildSynthesis(synthesisInputs({ ranking: ranking(synthesisInputs().ranking.ranking, { urgent: [{ number: 4, why: "certificate expires", by: "2026-11-06" }] }) }));
   const text = summaryLines(synthesis).join("\n");
-  assert.match(text, /^URGENT \(1\)\n- #4 by 2026-11-06: certificate expires/);
+  assert.match(text, /^RUN: o\/r · run 2026-10-18 · code abc\n\nURGENT \(1\)\n- #4 by 2026-11-06: certificate expires/);
   assert.match(text, /STRONG THREADS\n1\. B \[b\] size M, \/to-spec, 3 open issues/);
 });
 
@@ -331,4 +331,79 @@ test("check blames the digests file that holds a wrong or repeated digest, and r
   assert.deepEqual(report.digests.redo_batches, [1, 2]);
   assert.ok(report.problems.some((p) => /batch-01\.json\[2\]: #3 is not in batch 1/.test(p)));
   assert.ok(report.problems.some((p) => /batch-02\.json\[2\]: #4 is digested twice/.test(p)));
+});
+
+test("buildSynthesis checks an open-now list against the issue tracker's count instead of guessing", () => {
+  const forty = Array.from({ length: 40 }, (_, index) => index + 1);
+  const inputs = { ...synthesisInputs(), manifest: manifestOf(forty), snapshot: snapshotOf(forty) };
+  assert.equal(buildSynthesis({ ...inputs, openNow: [1, 2, 3, 4], openCount: 4 }).closed_since_snapshot.length, 36);
+  assert.throws(() => buildSynthesis({ ...inputs, openNow: [1, 2, 3, 4], openCount: 30 }), /lists 4 issues but the issue tracker reports 30 open/);
+});
+
+test("applyLinks takes today's parents and sub-issues, and leaves closed issues as they were", () => {
+  const snapshot = [{ number: 1, parent: null, sub_issues: [] }, { number: 2, parent: 9, sub_issues: [] }];
+  const updated = applyLinks(snapshot, new Map([[1, { parent: 50, sub_issues: [3] }]]));
+  assert.deepEqual(updated, [{ number: 1, parent: 50, sub_issues: [3] }, { number: 2, parent: 9, sub_issues: [] }]);
+});
+
+test("keepDestination puts a run under the state directory, one folder per repo", () => {
+  const run = "/tmp/scratch/synthesize-backlog-20261018-0500";
+  assert.equal(keepDestination({ run, repo: "o/r", environment: {}, home: "/home/u", platform: "linux" }), "/home/u/.local/state/synthesize-backlog/o-r/20261018-0500");
+  assert.equal(keepDestination({ run, repo: "o/r", environment: { XDG_STATE_HOME: "/xdg" }, home: "/home/u", platform: "linux" }), "/xdg/synthesize-backlog/o-r/20261018-0500");
+  assert.throws(() => keepDestination({ run, repo: "", environment: {}, home: "/home/u", platform: "linux" }), /no OWNER\/NAME repo/);
+});
+
+test("summaryLines names the run and marks threads an earlier session folded", () => {
+  const synthesis = buildSynthesis({ ...synthesisInputs(), meta: { repo: "o/r", sha: "abcdef1234567890", date: "2026-10-18", area: "label:ux", refreshed: "2026-10-21" } });
+  const text = summaryLines(synthesis, { b: 412, a: 413 }).join("\n");
+  assert.match(text, /^RUN: o\/r · run 2026-10-18 · code abcdef123456 · area label:ux · refreshed 2026-10-21/);
+  assert.match(text, /1\. B \[b\] size M, \/to-spec, 3 open issues, folded as #412/);
+  assert.match(text, /ALSO FOLDED\n2\. A \[a\], folded as #413/);
+  assert.equal(trackerPlan(synthesis, "b", ["b"], { b: 412 }).folded_as, 412);
+});
+
+function finishedRun(t) {
+  const { run, write } = writeRun(t);
+  write("digests/batch-01.json", { digests: [1, 2, 3, 4].map((n) => digest(n)) });
+  write("grouping.json", { candidates: [{ id: "one", name: "One", root_cause: "r", structural_change: "s", source_refs: ["architecture#0"] }], rejected: [] });
+  write("verdicts/one.skeptic.json", skeptic());
+  write("verdicts/one.fit.json", fit([[1, "full"], [2, "full"], [3, "partial"]]));
+  write("ranking.json", ranking([{ id: "one", rank: 1, strength: "Strong", leverage_note: "n" }]));
+  cli(["merge", run]);
+  const final = cli(["final", run, "--repo", "o/r", "--sha", "abc", "--date", "2026-10-18"]);
+  assert.equal(final.status, 0, final.stderr);
+  return { run, write };
+}
+
+test("keep copies a finished run without its checkout, once", (t) => {
+  const { run } = finishedRun(t);
+  mkdirSync(join(run, "code", "src"), { recursive: true });
+  writeFileSync(join(run, "code", "src", "index.ts"), "checkout");
+  const destination = join(mkdtempSync(join(tmpdir(), "keep-")), "kept");
+  t.after(() => rmSync(dirname(destination), { recursive: true, force: true }));
+  const kept = cli(["keep", run, "--to", destination]);
+  assert.equal(kept.status, 0, kept.stderr);
+  assert.deepEqual(JSON.parse(kept.stdout), { kept: destination });
+  assert.ok(existsSync(join(destination, "synthesis.json")) && existsSync(join(destination, "snapshot.json")));
+  assert.ok(!existsSync(join(destination, "code")));
+  assert.match(cli(["keep", run, "--to", destination]).stderr, /already exists/);
+});
+
+test("refresh re-applies today's open issues and links to a kept run, and folded records a tracker", (t) => {
+  const { run, write } = finishedRun(t);
+  write("open-now.json", [1, 2, 4]);
+  writeFileSync(join(run, "links.jsonl"), `${JSON.stringify({ number: 2, parent: { number: 80 }, subIssues: { nodes: [] } })}\n`);
+  assert.match(cli(["refresh", run]).stderr, /needs --open-count/);
+  const refresh = cli(["refresh", run, "--open-count", "3", "--date", "2026-10-21"]);
+  assert.equal(refresh.status, 0, refresh.stderr);
+  const synthesis = JSON.parse(readFileSync(join(run, "synthesis.json"), "utf8"));
+  assert.deepEqual(synthesis.closed_since_snapshot, [3]);
+  assert.equal(synthesis.meta.refreshed, "2026-10-21");
+  assert.equal(synthesis.meta.repo, "o/r");
+  const plan = JSON.parse(cli(["tracker", run, "one"]).stdout);
+  assert.deepEqual(plan.attach, [1]);
+  assert.deepEqual(plan.listed.map((entry) => entry.reason), ["already under #80", "closed since the snapshot"]);
+  assert.equal(cli(["folded", run, "one", "#412"]).status, 0);
+  assert.match(cli(["summary", run]).stdout, /\[one\] size M, \/to-spec, 2 open issues, folded as #412/);
+  assert.match(cli(["folded", run, "ghost", "5"]).stderr, /no surviving thread/);
 });
