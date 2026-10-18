@@ -6,9 +6,9 @@
 |---|---|---|
 | `<repo>-dev` | Development and test values: sandbox API keys, local signing secrets | Every developer on the project |
 | `<repo>-prod` | Production values | The people who deploy; never CI analysis jobs |
-| `<repo>-ci` | Only what CI needs: deploy tokens, read-only tokens for audits | The CI service account (read-only), plus admins |
+| `<repo>-ci` | Only what deploy jobs need: deploy tokens | The CI service account (read-only), plus admins |
 
-Add `<repo>-staging` only if a staging environment exists. For a solo developer, one personal account with these three vaults is fine; the separation matters most for the CI vault.
+Add `<repo>-staging` only if a staging environment exists. Scheduled audits get a vault of their own, `<repo>-audits`, with its own service account. A job that runs a model must never share a vault or a service account with deploy jobs, and the audits load read-only tokens under the same names (`CLOUDFLARE_API_TOKEN`, `SENTRY_AUTH_TOKEN`) as the deploy tokens. The schedule-audits skill sets that vault up. For a solo developer, one personal account with these three vaults is fine; the separation matters most for the CI vault.
 
 ## Items
 
