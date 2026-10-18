@@ -78,7 +78,7 @@ Model-invoked:
 
 User-invoked:
 
-- [grill-with-docs](skills/engineering/grill-with-docs/SKILL.md): a relentless interview that also updates the glossary and ADRs. ([docs](docs/engineering/grill-with-docs.md))
+- [grill-with-docs](skills/engineering/grill-with-docs/SKILL.md): a relentless interview that also settles the glossary terms and ADRs, and sends them to the branch that will carry them. ([docs](docs/engineering/grill-with-docs.md))
 - [to-spec](skills/engineering/to-spec/SKILL.md): turn the conversation into a spec, gated by product and persona review. ([docs](docs/engineering/to-spec.md))
 - [to-tickets](skills/engineering/to-tickets/SKILL.md): split a spec into tracer-bullet tickets with blocking edges. ([docs](docs/engineering/to-tickets.md))
 - [implement](skills/engineering/implement/SKILL.md): implement a spec or ticket, through to tests and docs. ([docs](docs/engineering/implement.md))
@@ -123,7 +123,7 @@ Model-invoked:
 | `docs/agents/*.md` | setup-standards | Every skill |
 | `CODING_STANDARDS.md` | setup-standards, from house-style | review-changes, implement, the audits |
 | `PRODUCT.md`, `docs/product/avatars.md`, `docs/product/journeys/*.md` | discover-domain, product-modeling | product-review, persona-review, test-audit, docs-audit, to-spec |
-| `GLOSSARY.md`, `docs/adr/*.md` | domain-modeling | Everything that names things |
+| `GLOSSARY.md`, `docs/adr/*.md` | domain-modeling settles them; the worktree that carries the work writes them | Everything that names things |
 | `docs/features/*.md` | project-docs, implement, prune-docs | Engineers and agents changing the code |
 | `.github/workflows/claude-audits.yml` | schedule-audits | GitHub Actions |
 

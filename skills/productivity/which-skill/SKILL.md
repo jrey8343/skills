@@ -25,13 +25,13 @@ Run once per repo, roughly in this order:
 
 ## The main flow: idea → ship
 
-1. **`/grill-with-docs`** sharpens the idea by interview and keeps `GLOSSARY.md` and ADRs current as it goes. (No repo under you? **`/grill-me`**.)
+1. **`/grill-with-docs`** sharpens the idea by interview and settles the glossary terms and ADRs it needs as it goes. It writes none of them to your checkout: each resolved **model change** is stated in the conversation and travels by **carrier** — the spec, the ticket, or the conversation — to the worktree that applies it, so the vocabulary lands in the same PR as the code. A decision that is the whole deliverable gets a docs-only PR instead. (No repo under you? **`/grill-me`**.)
 2. **Need a runnable answer?** Detour through **`/prototype`**, bridged by **`/handoff`** if it lives in another directory.
 3. **Multi-session build?**
    - **Yes** → **`/to-spec`** writes the spec. Before publishing, it runs **product-review** (is this worth building, against `PRODUCT.md`?) and **persona-review** (does it make sense to the avatars?). If they say rethink, it stops and asks. Then **`/to-tickets`** cuts tracer-bullet tickets with blocking edges, and you build with **`/implement`** per ticket (clear context between tickets) or **`/implement-spec`** for the whole graph in parallel.
    - **No** → **`/implement`** right here.
 
-   Building happens in its own **worktree**, which ends as a PR and is swept away once the PR merges. Building means **`/tdd`** at agreed seams, following **house-style** (functional core, imperative shell, vertical slices, TigerStyle). The definition of done includes the feature doc, the user doc when the change is user-visible, and journey links. The work closes with **review-changes**, a two-axis review (Standards and Spec). **`/pr`** shapes the PR body.
+   Building happens in its own **worktree**, which ends as a PR and is swept away once the PR merges. Your main checkout stays clean through the whole flow: `/setup-standards` and `/discover-domain` also write to a worktree and end as a docs-only PR. Building means **`/tdd`** at agreed seams, following **house-style** (functional core, imperative shell, vertical slices, TigerStyle). The definition of done includes the carrier's model changes, the feature doc, the user doc when the change is user-visible, and journey links. The work closes with **review-changes**, a two-axis review (Standards and Spec). **`/pr`** shapes the PR body.
 
 Keep steps 1 to 3 in one context window until the tickets exist. See [PHASE-BOUNDARIES.md](PHASE-BOUNDARIES.md) for what to do between phases.
 

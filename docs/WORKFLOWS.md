@@ -17,6 +17,8 @@ flowchart LR
 
 The order matters a little: the product model gives the audits something to judge against, a lean `CLAUDE.md` makes every later run cheaper, and the scheduled workflow needs the 1Password service account.
 
+`setup-standards` and `discover-domain` each write to their own worktree and end as a docs-only PR, so you review the standards and the product model as a diff, and the checkout you work from is never left holding a dozen untracked files. Merge each before running the next step: the next step reads what the last one wrote.
+
 ## 2. Idea to shipped feature
 
 ```mermaid
@@ -35,7 +37,9 @@ flowchart TD
   IS --> R
 ```
 
-Building means tdd at agreed seams, in the house style. Done means tests at those seams, a feature doc, a user doc if the change is user-visible, journey links updated, and an ADR if the decision was hard to reverse.
+Building means tdd at agreed seams, in the house style. Done means tests at those seams, the carrier's model changes applied, a feature doc, a user doc if the change is user-visible, journey links updated, and an ADR if the decision was hard to reverse.
+
+A glossary term or ADR settled during `grill-with-docs` is not written to your checkout. It is stated in the conversation and carried — by the spec's `## Model changes` section, by the ticket that uses it, or by the conversation `implement` reads — to the worktree that applies it, so the vocabulary lands in the same PR as the code. `implement-spec` applies the spec's entries once on the integration branch, before the implementers fan out. When the decision is itself the deliverable, with no work to follow, it gets its own docs-only PR.
 
 Each build runs in its own git worktree, so sessions can work in parallel. `implement` sweeps away worktrees whose work has merged, starts a fresh one, and ends with a pushed branch and a PR. The next sweep removes that worktree once the PR merges (proven by git or the forge, never by the issue closing). Type `/worktree` to sweep at any time.
 

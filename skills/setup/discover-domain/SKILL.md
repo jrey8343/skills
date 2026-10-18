@@ -48,6 +48,8 @@ Call the Skill tool with "grilling" to walk the open questions as a design tree:
 
 ## 4. Write the model
 
+Before the first write, call the Skill tool with "worktree": the model is the deliverable, and it lands as a reviewable branch rather than as a pile of untracked files in the checkout the user works from. Write everything there. (Inside the worktree, product-modeling and domain-modeling write inline, which is what they do in any linked worktree.)
+
 As decisions settle, write them down without batching:
 
 - Call the Skill tool with "product-modeling" and write `PRODUCT.md`, `docs/product/avatars.md` and one `docs/product/journeys/<id>.md` per journey. Link existing e2e specs, feature docs and code globs you have verified. Leave `verified-at` unset.
@@ -58,4 +60,4 @@ As decisions settle, write them down without batching:
 
 Show which journeys have no e2e test, no feature doc and no user doc. Offer to file them: call the Skill tool with "report-findings" (interactive mode) with one finding per gap, using `audit: discover-domain` and rules `journey-without-e2e`, `journey-without-feature-doc` and `journey-without-user-doc`. Then suggest the next command, usually `/prune-docs` (when the agent doc carries domain knowledge that now has a proper home) or `/test-audit`.
 
-Don't commit. Leave the files for the user to review.
+Then finish the worktree as the worktree skill describes: commit the model, push the branch, and open a docs-only PR. The user reviews the model as a diff, and merges it when it reads true.

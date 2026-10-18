@@ -39,6 +39,18 @@ If a `GLOSSARY-MAP.md` exists at the root, the repo has multiple contexts. The m
 
 Create files lazily: only when you have something to write. If no `GLOSSARY.md` exists, create one when the first term is resolved. If no `docs/adr/` exists, create it when the first ADR is needed.
 
+## Where the writes land
+
+A **model change** — a resolved glossary term, an ADR — is written to the checkout that will carry it, not to the one you happen to be sitting in. Take the first that applies:
+
+1. **Already in a linked worktree** (`git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`): write the file now. The branch carries it.
+2. **In the main checkout, with work to follow**: write nothing to the repo. State the finished entry in the conversation the moment it resolves — the term, its definition, and the definition it replaces, quoted from `GLOSSARY.md` — and name its **carrier**: the spec's `## Model changes` section, the ticket, or this conversation. The worktree that applies the carrier makes the file edit, so the term lands in the same PR as the code that uses it.
+3. **In the main checkout, with the decision itself as the deliverable**: call the Skill tool with "worktree", write the files there, and finish it as a docs-only PR.
+
+A stated but unapplied model change is **pending**. It travels verbatim: a carrier holds the entry's full text, because the agent that applies it was not in this conversation.
+
+An explicit instruction from the user to write it in this checkout overrides all three branches.
+
 ## During the session
 
 ### Challenge against the glossary
@@ -57,9 +69,9 @@ When domain relationships are being discussed, stress-test them with specific sc
 
 When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible. Which is right?"
 
-### Update GLOSSARY.md inline
+### Record each term as it resolves
 
-When a term is resolved, update `GLOSSARY.md` right there. Don't batch these up: capture them as they happen. Use the format in [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
+When a term is resolved, record it right there, where *Where the writes land* sends it. Don't batch these up: capture them as they happen. Use the format in [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
 
 `GLOSSARY.md` should be totally devoid of implementation details. Do not treat `GLOSSARY.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
 
@@ -71,4 +83,4 @@ Only offer to create an ADR when all three are true:
 2. **Surprising without context**: a future reader will wonder "why did they do it this way?"
 3. **The result of a real trade-off**: there were genuine alternatives and you picked one for specific reasons
 
-If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md).
+If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md). An ADR is a model change: it lands where *Where the writes land* sends it.

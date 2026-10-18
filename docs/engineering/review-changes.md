@@ -27,7 +27,7 @@ The Standards axis needs nothing: with no `CODING_STANDARDS.md` it uses the [hou
 | --- | --- | --- |
 | Question | Is it built right? | Is it the right thing? |
 | Reads | `CODING_STANDARDS.md`, other documented standards, house style if no standards file, the smell baseline | The originating issue or spec |
-| Reports | [hard] breaks as violations citing the rule; [judgement] rules and smells as "possible …" | Missing or partial requirements, scope creep, wrong implementations |
+| Reports | [hard] breaks as violations citing the rule; [judgement] rules and smells as "possible …" | Missing or partial requirements, scope creep, wrong implementations, unapplied model changes |
 
 The repo always overrides: a documented standard beats the house rules, which beat the baseline. Anything tooling already enforces is skipped.
 
@@ -55,6 +55,7 @@ Check each citation before acting. Every finding must cite a rule, a smell plus 
 - The report has separate `## Standards` and `## Spec` blocks.
 - Violations cite a `CODING_STANDARDS.md` rule; judgement calls read "possible …".
 - With no spec, the Spec block says so instead of inventing requirements.
+- A glossary term the spec carried but the diff never wrote is reported as a Spec finding, not quietly passed.
 
 ## Where it fits
 

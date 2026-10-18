@@ -35,6 +35,8 @@ The document carries the live thread (what's in flight, why, and what's next) pl
 
 It deliberately does not carry anything already written down. The document references specs, plans, ADRs, issues, commits and diffs by path or URL, and never copies them. That keeps the file small, and it keeps the settled detail in one place instead of two copies that drift apart.
 
+There is one exception, and it matters: **pending model changes**. A glossary term or ADR settled in a grilling session is deliberately not written to a file, so no path can reach it — it lives in the context that is about to be compacted away. Those entries are copied into the handoff whole, with the file each one lands in and the text it replaces.
+
 ## Common questions
 
 **Handoff or compact?**
@@ -67,6 +69,7 @@ Both work; they suit different situations. As a skill, it ships and updates thro
 ## It's working if
 
 - The document is a small fraction of the conversation, and the specs, issues and diffs appear in it as paths and URLs rather than as copied text.
+- Any glossary term or ADR the session settled but never wrote appears in full, under its own heading, because nothing else holds it.
 - You can read it cold, without the original session open, and know what to do next.
 - The fresh agent starts working instead of asking you to re-explain the setup.
 - In the fork case, your original session is unchanged when you come back to it.

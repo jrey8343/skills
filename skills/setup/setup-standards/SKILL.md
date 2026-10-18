@@ -67,6 +67,8 @@ Let them edit before anything is written. Keep `stack.md` factual: fill only wha
 
 ## 4. Write
 
+Before the first file write, call the Skill tool with "worktree": these files become the repo's law, and they land as a reviewable branch rather than as a dozen edits in the checkout the user works from. Write every file there. Label creation is a tracker-side change, not a file write, so it happens the same way either way.
+
 **Pick the agent doc to edit.** If `CLAUDE.md` exists, edit it. Otherwise, if `AGENTS.md` exists, edit that. If neither exists, ask which to create. Never create one when the other already exists.
 
 If an `## Agent skills` block exists, update it in place. Don't touch the surrounding sections: slimming the rest of the file is `/prune-docs`'s job.
@@ -98,7 +100,7 @@ If an `## Agent skills` block exists, update it in place. Don't touch the surrou
 
 **Create labels** from [labels.md](labels.md) that the tracker lacks: the triage labels, `audit:<name>` for each enabled audit, and the rest of the table.
 
-Don't commit. Leave the changes in the working tree for the user to review, unless they ask you to commit.
+Finish the worktree as the worktree skill describes: commit the files, push the branch, and open a docs-only PR. The user reviews the standards as a diff before they bind anything.
 
 ## 5. Gap pass
 

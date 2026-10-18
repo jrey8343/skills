@@ -2,9 +2,9 @@
 
 ## What it does
 
-`research` answers a question by reading the sources that own the answer, then leaves a cited Markdown file in the repo. It works only from **primary sources**: official docs, source code, specs, first-party APIs. It follows every claim back to the source that owns it, so it will not repeat a blog post's account of an API when the API's own docs are reachable.
+`research` answers a question by reading the sources that own the answer, then leaves a cited Markdown file. It works only from **primary sources**: official docs, source code, specs, first-party APIs. It follows every claim back to the source that owns it, so it will not repeat a blog post's account of an API when the API's own docs are reachable.
 
-It does not answer you in the conversation. The output is a file, written where the repo already keeps such notes, with a link on each claim. You get a document you can react to, hand to another agent, or throw away, rather than an answer that is gone when the session ends.
+It does not answer you in the conversation. The output is a file, with a link on each claim. You get a document you can react to, hand to another agent, or throw away, rather than an answer that is gone when the session ends. It lands in the session's scratchpad, outside the repo, and the agent reports the path — so a question you only wanted answered does not leave a file in your checkout. Keep it and it is offered as a docs-only PR, written where the repo already keeps such notes.
 
 ## When to reach for it
 
@@ -66,7 +66,7 @@ No, it fires them for you. A charting session spawns one `/research` subagent pe
 
 - Your own session keeps going. If you are sitting watching it read, the delegation didn't happen.
 - Exactly one new background task appears. A second one with a near-identical name is the nesting bug.
-- One new Markdown file shows up, in the folder the repo already uses for notes, and the agent tells you the path.
+- One new Markdown file shows up in the scratchpad, the agent tells you its full path, and your repo is unchanged until you say to keep it.
 - Every claim in it carries a link, and following two at random lands you on an official doc, a spec, or the source file itself, not on someone's write-up of it.
 - You can make the decision you were stuck on from the file alone, without going back to the sources yourself.
 

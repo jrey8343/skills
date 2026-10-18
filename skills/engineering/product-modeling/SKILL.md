@@ -30,6 +30,20 @@ Create files lazily, when there is something real to write. Formats:
 - [AVATAR-FORMAT.md](AVATAR-FORMAT.md)
 - [JOURNEY-FORMAT.md](JOURNEY-FORMAT.md)
 
+## Where the writes land
+
+A **model change** — a new avatar, a new or reshaped journey, an edit to `PRODUCT.md` — is written to the checkout that will carry it, not to the one you happen to be sitting in. Take the first that applies:
+
+1. **Already in a linked worktree** (`git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`): write the file now. The branch carries it.
+2. **In the main checkout, with work to follow**: write nothing to the repo. State the finished entry in the conversation the moment it resolves — the file it lands in, its full text, and the text it replaces — and name its **carrier**: the spec's `## Model changes` section, the ticket, or this conversation. The worktree that applies the carrier makes the file edit, so the journey lands in the same PR as the code that serves it.
+3. **In the main checkout, with the decision itself as the deliverable**: call the Skill tool with "worktree", write the files there, and finish it as a docs-only PR.
+
+A stated but unapplied model change is **pending**. It travels verbatim: a carrier holds the entry's full text, because the agent that applies it was not in this conversation.
+
+An explicit instruction from the user to write it in this checkout overrides all three branches.
+
+Linking is not a model change: it records targets that already exist, from a worktree that already holds them. Write those where you find them.
+
 ## During a session
 
 ### Challenge against the model
@@ -48,9 +62,9 @@ Create files lazily, when there is something real to write. Formats:
 
 Avatars have their own words. `GLOSSARY.md` holds the team's precise terms; `avatars.md` records the words each avatar actually uses and the internal terms they should never see. User docs and UI copy are written in the avatar's words.
 
-### Update inline
+### Record each decision as it crystallises
 
-When a decision about the product, an avatar or a journey crystallises, write it down immediately in the right file. Don't batch.
+When a decision about the product, an avatar or a journey crystallises, record it immediately, where *Where the writes land* sends it. Don't batch.
 
 ## Linking (the part other skills call this for)
 

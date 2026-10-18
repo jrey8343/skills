@@ -15,7 +15,7 @@ Typing `/grilling` directly gets you the plain interview and nothing else. Where
 | What you have | Reach for |
 | --- | --- |
 | You aren't working in a working directory | [grill-me](grill-me.md): the same session, under a name the agent will never fire by itself |
-| You are in a working directory | [grill-with-docs](../engineering/grill-with-docs.md): the same session, and it writes `GLOSSARY.md` and ADRs as it goes |
+| You are in a working directory | [grill-with-docs](../engineering/grill-with-docs.md): the same session, and it settles glossary terms and ADRs as it goes, for the branch that will carry them |
 | An effort too big to hold in one session | [wayfinder](../engineering/wayfinder.md): it charts a map and runs grilling inside the decision tickets |
 | A question that talking cannot settle: how something should look or feel | [prototype](../engineering/prototype.md): build the throwaway version, then come back |
 | A skill of your own that needs an interview | Invoke `/grilling` from it, rather than writing another interview |
@@ -40,7 +40,7 @@ This page covers the mechanism. The wrapper skills' pages answer the questions p
 | --- | --- |
 | The tree, the frontier, rounds, the question format, facts vs decisions | Here |
 | How long a session should run, what to do with a question you can't answer by talking, how to avoid nodding along | [grill-me](grill-me.md) |
-| What gets written to `GLOSSARY.md`, what becomes an ADR | [grill-with-docs](../engineering/grill-with-docs.md) |
+| What becomes a glossary term, what becomes an ADR, and where either one gets written | [grill-with-docs](../engineering/grill-with-docs.md) |
 
 ## Common questions
 
