@@ -86,3 +86,20 @@ flowchart LR
   GH --> TRI["/triage"] --> FIX["/implement<br/>commit says Fixes SHORT-ID"]
   FIX --> SEN
 ```
+
+## 6. A backlog that has piled up
+
+When audits and agent runs file issues faster than anyone can triage them, synthesize first, then triage what's left.
+
+```mermaid
+flowchart LR
+  BL["Open issues<br/>(every one, with comments)"] --> SB["/synthesize-backlog<br/>digest, six lenses, merge,<br/>skeptic + fit-checker"]
+  SB --> REP["Report: ranked threads,<br/>landing order, triage plan"]
+  REP --> TRK["Thread trackers for the<br/>threads you pick, members attached"]
+  TRK --> ENTRY["/implement, /to-spec<br/>or /wayfinder"]
+  REP --> TRI["/triage<br/>the issues no thread covers"]
+```
+
+- **Threads, not topics.** A thread is one cause in the code and one change that removes it; grouping by product area doesn't count.
+- **Verified against what is live.** Agents read a detached checkout of the default branch's tip, never a local checkout that may be behind.
+- **Read-only until you pick.** The run writes only to a temp directory and a temporary detached checkout; thread trackers appear only for the threads you choose, and the next run extends them.

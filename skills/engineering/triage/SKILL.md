@@ -38,7 +38,7 @@ Five **state** roles:
 
 For a PR, the same states read against the attached code: `ready-for-agent` means a brief is attached and an agent should take the next step on the diff; `ready-for-human` means it's ready for a human to merge.
 
-Every triaged issue should carry exactly one category role and one state role. If state roles conflict, flag it and ask the maintainer before doing anything else.
+Every triaged issue should carry exactly one category role and one state role. If state roles conflict, flag it and ask the maintainer before doing anything else. The exception is a **tracker**, an issue that only holds sub-issues: it carries its category role and the tracker label from the mapping, and no state role.
 
 These are canonical role names. The actual label strings used in the issue tracker may differ. The mapping should have been provided to you. If not, tell the user to run `/setup-standards`.
 
@@ -62,7 +62,7 @@ The maintainer invokes `/triage` and describes what they want in natural languag
 
 ## Show what needs attention
 
-Query the issue tracker and present three buckets, oldest first (skip `audit-run` tracking issues; tag `source:*` items `[external]`):
+Query the issue tracker and present three buckets, oldest first (skip `audit-run` tracking issues and trackers; tag `source:*` items `[external]`):
 
 1. **Unlabeled**: never triaged.
 2. **`needs-triage`**: evaluation in progress.

@@ -16,6 +16,7 @@ You invoke this by typing `/triage` and describing what you want: "show me what 
 | A rough idea of your own | [grill-with-docs](grill-with-docs.md) |
 | A settled conversation to turn into a spec | [to-spec](to-spec.md) |
 | A confirmed bug that needs a root cause | [diagnosing-bugs](diagnosing-bugs.md) |
+| Too many open issues to triage one by one | [synthesize-backlog](synthesize-backlog.md) |
 
 ## Prerequisites
 
@@ -30,6 +31,8 @@ An issue tracker and label vocabulary configured by [setup-standards](../setup/s
 | `ready-for-agent` | Fully specified, with an agent brief. An AFK agent can take it. |
 | `ready-for-human` | Same brief, plus why an agent can't do it. |
 | `wontfix` | Closed, with the reason recorded. |
+
+A **tracker**, an issue that only holds sub-issues (one [synthesize-backlog](synthesize-backlog.md) opened for a thread, say), carries a category and the `tracker` label but no state, and triage skips it.
 
 Rejected enhancements go into `.out-of-scope/`, one file per concept, which triage checks before evaluating anything new.
 
@@ -57,7 +60,7 @@ Only if it should never come back. Not planned is permanent suppression for that
 
 **Can it run across my whole backlog?**
 
-It can, but the listing pass doesn't read comments. For a bulk pass, tell it to read each issue's comments.
+It can, but the listing pass doesn't read comments. For a large backlog, run [synthesize-backlog](synthesize-backlog.md) first: an issue a thread will close needs no brief of its own.
 
 ## It's working if
 

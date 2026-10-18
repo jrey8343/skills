@@ -85,6 +85,7 @@ User-invoked:
 - [implement-spec](skills/engineering/implement-spec/SKILL.md): implement a whole ticket graph in parallel on an integration branch. ([docs](docs/engineering/implement-spec.md))
 - [wayfinder](skills/engineering/wayfinder/SKILL.md): chart a huge, foggy effort as decision tickets. ([docs](docs/engineering/wayfinder.md))
 - [triage](skills/engineering/triage/SKILL.md): move raw issues through triage roles to agent-ready briefs. ([docs](docs/engineering/triage.md))
+- [synthesize-backlog](skills/engineering/synthesize-backlog/SKILL.md): find the shared causes across every open issue, verified against the code, and fold the ones you pick into thread trackers. ([docs](docs/engineering/synthesize-backlog.md))
 
 Model-invoked:
 
