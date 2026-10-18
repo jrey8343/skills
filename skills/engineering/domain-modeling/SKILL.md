@@ -49,7 +49,7 @@ A **model change** — a resolved glossary term, an ADR — is written to the ch
 
 A stated but unapplied model change is **pending**. It travels verbatim: a carrier holds the entry's full text, because the agent that applies it was not in this conversation.
 
-When the user asks for the write here and now, write it here and now.
+An explicit instruction from the user to write it in this checkout overrides all three branches.
 
 ## During the session
 

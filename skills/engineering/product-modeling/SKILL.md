@@ -40,7 +40,7 @@ A **model change** — a new avatar, a new or reshaped journey, an edit to `PROD
 
 A stated but unapplied model change is **pending**. It travels verbatim: a carrier holds the entry's full text, because the agent that applies it was not in this conversation.
 
-When the user asks for the write here and now, write it here and now.
+An explicit instruction from the user to write it in this checkout overrides all three branches.
 
 Linking is not a model change: it records targets that already exist, from a worktree that already holds them. Write those where you find them.
 

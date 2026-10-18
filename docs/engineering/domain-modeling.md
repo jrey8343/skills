@@ -25,7 +25,7 @@ Reach for it when the *words* are the problem:
 
 ## Prerequisites
 
-None up front. The skill writes into two places and creates both lazily:
+None up front. The skill writes into two places, creates both lazily, and writes them in the worktree that carries the work rather than the checkout you are designing in (see below):
 
 - **`GLOSSARY.md`** at the repo root. The skill creates it when you settle the first term. In a repo with a `GLOSSARY-MAP.md` at the root, terms go into the per-context `GLOSSARY.md` the map points at instead.
 - **`docs/adr/`**. The skill creates it with the first ADR that clears the bar.

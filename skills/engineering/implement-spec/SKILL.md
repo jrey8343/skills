@@ -24,7 +24,7 @@ Communication to and from subagents should be sparse. Communicate primarily thro
 
 3. Create the integration branch in its own worktree: call the Skill tool with `worktree`, which sweeps merged worktrees first, so the main checkout stays free for other work. If the issue tracker closes work through PRs, or the user asks for one, open a draft PR after the first merge in step 6 (a branch with no commits ahead of main can't open one), marked as closing the spec and tickets.
 
-4. Apply the spec's `## Model changes` entries to the integration branch, verbatim, and commit them before any implementer starts. Once, here: twelve worktrees each editing `GLOSSARY.md` is twelve conflicts, and every implementer then builds against the settled vocabulary. Entries distributed onto individual tickets are already covered by this commit.
+4. Apply every **pending** model change to the integration branch, verbatim, and commit them before any implementer starts. Collect them from all three carriers: the spec's `## Model changes` section, each ticket's own entries, and the conversation when the tickets were cut straight from one. Once, here: twelve worktrees each editing `GLOSSARY.md` is twelve conflicts, and every implementer then builds against the settled vocabulary.
 
 5. Use **implementer subagents** to implement each ticket, each in its own worktree on its own branch. Each implementer subagent:
    - confirms its worktree is based on the integration branch before starting, and resets onto it if not;

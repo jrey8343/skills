@@ -4,23 +4,23 @@ The words this collection uses about itself. Skills are project-agnostic, so not
 
 ## Design session
 
-A session that sharpens a plan or a model without writing code: a grilling round, a domain-modeling pass, a product-modeling discussion. It runs in whatever checkout the user has open, usually the main one, and therefore writes nothing to the repo.
+A session that sharpens a plan or a model without writing code: a grilling round, a domain-modeling pass, a product-modeling discussion. Run from the main checkout it writes nothing there, leaving its model changes pending for a carrier; run inside a worktree, or ending in a docs-only PR, it writes them itself.
 
 _Avoid_: "planning session" (a plan is one of several things a design session produces).
 
 ## Build session
 
-A session that writes code, always in its own worktree, ending as a pushed branch with a PR. The counterpart to a design session, and the only kind that applies model changes.
+A session that writes code, always in its own worktree, ending as a pushed branch with a PR. The counterpart to a design session, and where a carrier's model changes are usually applied.
 
 ## Model change
 
-A resolved change to a project's domain or product model: a glossary term, an ADR, an avatar, a journey. Produced by a design session, applied by a build session. It travels verbatim, never paraphrased, because the agent that applies it was not in the conversation that settled it.
+A resolved change to a project's domain or product model: a glossary term, an ADR, an avatar, a journey. Produced by a design session, applied in a worktree. It travels verbatim, never paraphrased, because the agent that applies it was not in the conversation that settled it.
 
 _Avoid_: "doc change" (a feature doc or a help page is not a model change; it describes behaviour rather than defining a concept).
 
 ## Pending
 
-Said of a model change that has been stated but not yet written to its file. Every model change from a design session is pending until a worktree applies it.
+Said of a model change that has been stated but not yet written to its file. A model change deferred from the main checkout stays pending until a worktree applies it.
 
 ## Carrier
 
@@ -33,7 +33,3 @@ A pull request that changes documentation and nothing else, opened from a worktr
 ## Sweep
 
 The pass that removes worktrees whose work has merged, proven by git or the forge. Owned by the `worktree` skill.
-
-## Bucket
-
-One of the four top-level skill folders: `setup/` (adopt a standard into a repo), `audits/` (inspect and file findings), `engineering/` (daily code work and shared references), `productivity/` (non-code workflow).

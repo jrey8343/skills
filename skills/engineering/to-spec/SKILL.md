@@ -16,11 +16,13 @@ The issue tracker and triage label vocabulary should have been provided to you. 
 
 Check with the user that these seams match their expectations.
 
-3. Draft the spec using the template below.
+3. Collect every **pending** model change the conversation produced — a glossary term, an ADR, an avatar, a journey settled but never written to a file — for the `## Model changes` section. The spec is their carrier, so an entry left behind here is lost when the conversation clears.
 
-4. Review the draft before publishing. Call the Skill tool with "product-review" on the draft spec, then call the Skill tool with "persona-review" on it (pre-build: a static walk of the described journeys, no live app). Put their verdicts and the changes they asked for in the spec's `## Product review` section. If product-review's verdict is "don't build" or "rethink", stop and put it to the user before publishing; publish only once they decide to go ahead, and record their reason in the section.
+4. Draft the spec using the template below.
 
-5. Publish the spec to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
+5. Review the draft before publishing. Call the Skill tool with "product-review" on the draft spec, then call the Skill tool with "persona-review" on it (pre-build: a static walk of the described journeys, no live app). Put their verdicts and the changes they asked for in the spec's `## Product review` section. If product-review's verdict is "don't build" or "rethink", stop and put it to the user before publishing; publish only once they decide to go ahead, and record their reason in the section.
+
+6. Publish the spec to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
 
 <spec-template>
 

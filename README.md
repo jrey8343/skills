@@ -123,7 +123,7 @@ Model-invoked:
 | `docs/agents/*.md` | setup-standards | Every skill |
 | `CODING_STANDARDS.md` | setup-standards, from house-style | review-changes, implement, the audits |
 | `PRODUCT.md`, `docs/product/avatars.md`, `docs/product/journeys/*.md` | discover-domain, product-modeling | product-review, persona-review, test-audit, docs-audit, to-spec |
-| `GLOSSARY.md`, `docs/adr/*.md` | domain-modeling | Everything that names things |
+| `GLOSSARY.md`, `docs/adr/*.md` | domain-modeling settles them; the worktree that carries the work writes them | Everything that names things |
 | `docs/features/*.md` | project-docs, implement, prune-docs | Engineers and agents changing the code |
 | `.github/workflows/claude-audits.yml` | schedule-audits | GitHub Actions |
 

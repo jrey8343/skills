@@ -9,6 +9,7 @@ Agent skills for production engineering, forked from [mattpocock/skills](https:/
 - Every skill has `agents/openai.yaml` (Codex picker metadata).
 - Every skill has a docs page at `docs/<bucket>/<skill>.md` and a linked entry in `README.md`.
 - `.claude-plugin/plugin.json` lists every skill; regenerate with `npm run manifest`.
+- `GLOSSARY.md` at the root holds the words this collection uses about itself (design session, model change, carrier, pending). Use those words in skills and docs pages rather than coining new ones for the same thing.
 
 ## Invocation
 

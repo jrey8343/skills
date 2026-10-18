@@ -41,7 +41,7 @@ Give each ticket its **blocking edges**: the other tickets that must complete be
 
 ### 4. Distribute the model changes
 
-If the source spec has a `## Model changes` section, or the conversation left **pending** model changes (glossary terms, ADRs, avatars, journeys), hand each entry to the ticket whose slice uses it, verbatim and whole. An entry no slice touches goes to the first ticket: the prefactor, or the first unblocked slice. A docs-only ticket is a horizontal slice, so there is never a ticket whose only job is the glossary.
+If the source spec has a `## Model changes` section, or the conversation left **pending** model changes (glossary terms, ADRs, avatars, journeys), hand each entry to the ticket whose slice uses it, verbatim and whole. An entry no slice touches goes to the first ticket: the prefactor, or the first unblocked slice. Every entry rides a slice that uses it, because a ticket whose only job is the glossary is a horizontal slice.
 
 An entry may ride more than one ticket when more than one slice needs it; whichever lands first applies it, and the rest find it already there.
 
