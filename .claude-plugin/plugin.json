@@ -44,6 +44,7 @@
     "./skills/engineering/prototype",
     "./skills/engineering/research",
     "./skills/engineering/review-changes",
+    "./skills/engineering/synthesize-backlog",
     "./skills/engineering/tdd",
     "./skills/engineering/to-spec",
     "./skills/engineering/to-tickets",

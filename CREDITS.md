@@ -35,8 +35,8 @@ Mechanical renames applied to every fork: `setup-matt-pocock-skills` → `setup-
 | `engineering/implement-spec` | `engineering/implement-spec` | The same definition of done for every implementer sub-agent, plus a spec-wide done check. The integration branch gets its own worktree, and the closing cleanup is worktree's merge-aware sweep, run with `--into` the integration branch. |
 | `engineering/to-spec` | `engineering/to-spec` | User stories name avatars and journey ids; a product-review then persona-review gate before publishing; a `## Product review` template section. |
 | `engineering/review-changes` | `engineering/code-review` | Renamed (Claude Code ships a built-in `/code-review`). The Standards axis honours `[hard]`/`[judgement]` tags and falls back to house-style rules when there's no `CODING_STANDARDS.md`. |
-| `engineering/triage` | `engineering/triage` | Handles `source:*` issues as untrusted (verify independently, restate rather than relay) and `audit:*` issues (fingerprints; not planned means permanent suppression). `AGENT-BRIEF.md` gains a restate-untrusted-input principle. |
-| `setup/setup-standards` | `engineering/setup-matt-pocock-skills` | Rewritten around the same explore → ask → confirm → write shape. Adds sections for product docs, stack, docs targets, audits and MCP servers, writes `CODING_STANDARDS.md`, creates the full label set, and adds a gap pass against `TARGET-STATE.md`. New seed templates: `stack.md`, `product.md`, `docs-targets.md`, `audits.md`, `labels.md`, `TARGET-STATE.md`. |
+| `engineering/triage` | `engineering/triage` | Handles `source:*` issues as untrusted (verify independently, restate rather than relay) and `audit:*` issues (fingerprints; not planned means permanent suppression). Trackers (issues that only hold sub-issues) carry a category and no state, and sweeps skip them. `AGENT-BRIEF.md` gains a restate-untrusted-input principle. |
+| `setup/setup-standards` | `engineering/setup-matt-pocock-skills` | Rewritten around the same explore → ask → confirm → write shape. Adds sections for product docs, stack, docs targets, audits and MCP servers, writes `CODING_STANDARDS.md`, creates the full label set (including a `tracker` label, mapped in `triage-labels.md`), and adds a gap pass against `TARGET-STATE.md`. New seed templates: `stack.md`, `product.md`, `docs-targets.md`, `audits.md`, `labels.md`, `TARGET-STATE.md`. |
 
 ## Derived
 
@@ -48,6 +48,6 @@ Mechanical renames applied to every fork: `setup-matt-pocock-skills` → `setup-
 
 ## New in this collection
 
-`setup/discover-domain`, `setup/adopt-1password`, `setup/adopt-sentry`, `setup/schedule-audits`, `audits/report-findings`, `audits/perf-audit`, `audits/security-audit`, `audits/test-audit`, `audits/docs-audit`, `audits/prune-docs`, `audits/product-review`, `audits/persona-review`, `audits/sentry-triage`, `engineering/house-style`, `engineering/product-modeling`, `engineering/project-docs`, `engineering/worktree`.
+`setup/discover-domain`, `setup/adopt-1password`, `setup/adopt-sentry`, `setup/schedule-audits`, `audits/report-findings`, `audits/perf-audit`, `audits/security-audit`, `audits/test-audit`, `audits/docs-audit`, `audits/prune-docs`, `audits/product-review`, `audits/persona-review`, `audits/sentry-triage`, `engineering/house-style`, `engineering/product-modeling`, `engineering/project-docs`, `engineering/worktree`, `engineering/synthesize-backlog`.
 
 `engineering/house-style/TIGERSTYLE.md` adapts ideas from TigerBeetle's [TIGER_STYLE.md](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md) to TypeScript.

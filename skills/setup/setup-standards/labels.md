@@ -6,6 +6,7 @@ The labels these skills apply. Setup creates any that are missing (`gh label cre
 |---|---|---|
 | `audit:<name>` (one per enabled audit) | `5319e7` | Filed by the <name> audit |
 | `audit-run` | `d4c5f9` | Tracking issue for one audit run |
+| `tracker` | `bfd4f2` | Holds sub-issues; triage sweeps skip it. Carries a category, no state. |
 | `severity:critical` | `b60205` | Users harmed or data exposed now |
 | `severity:high` | `d93f0b` | Will bite under foreseeable conditions |
 | `severity:medium` | `fbca04` | Real but contained |
