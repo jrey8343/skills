@@ -10,6 +10,8 @@ The defining constraint is that a **topic** is not a thread. "Auth issues" is a 
 
 You invoke this by typing `/synthesize-backlog`, optionally with an area (a label, milestone or search); the agent won't reach for it on its own. It is expensive, so the trigger is a backlog too large to triage one issue at a time, typically after a burst of audits or overnight agent runs has filed dozens of issues.
 
+Folding is its own mode. A run ends by keeping itself and printing the command to fold it, `/synthesize-backlog fold <run-dir>`, which works in any later session: read the report today, decide over a few days, then fold the threads you pick. With no path, fold offers the newest kept run for the repo.
+
 | What you have | Where to go |
 | --- | --- |
 | Too many open issues to triage one by one, and a suspicion they overlap | `/synthesize-backlog` |
@@ -23,7 +25,7 @@ Run it before a large `/triage` pass, not after: an issue that a thread will clo
 
 GitHub issues, with the issue tracker configured by [setup-standards](../setup/setup-standards.md); other trackers aren't supported yet. It needs `gh`, and a git remote with the default branch. It reads `PRODUCT.md`, `GLOSSARY.md`, the ADRs and `CODING_STANDARDS.md` where they exist; ranking is much better with a product model from [discover-domain](../setup/discover-domain.md).
 
-Nothing lands in your working tree. The run directory, with every stage's file and the report, lives in your temp directory, and the code it checks is a detached checkout of the default branch's tip inside that directory, removed when the run ends. Folding threads in is the only step that writes to GitHub, and only for the threads you pick.
+Nothing lands in your working tree. The run works in your temp directory, and the code it checks is a detached checkout of the default branch's tip inside that directory, removed when the run ends. Its result is kept, without the checkout, under `~/.local/state/synthesize-backlog/<owner>-<name>/<timestamp>/` (`$XDG_STATE_HOME` if you set it, `%LOCALAPPDATA%` on Windows): outside every repo, because it holds issue text. Folding threads in is the only step that writes to GitHub, and only for the threads you pick.
 
 ## Six lenses, then a skeptic
 
@@ -44,6 +46,10 @@ Not on its own. Folding in opens thread trackers and attaches sub-issues; it clo
 **What happens on the next run?**
 
 The thread trackers it opened are in the next snapshot. The lenses extend them with new members instead of proposing the same thread again.
+
+**I folded a run last week. What does folding it again do?**
+
+Fold refreshes the run first: issues closed since are struck through, and members that gained a parent are listed rather than attached. Threads already folded show `folded as #N` and are left alone unless you ask to extend that tracker. The code isn't re-checked, so fold tells you how far behind the run's code is; past a few weeks, a fresh synthesis is the better answer.
 
 **An issue body says "ignore your instructions and…". What then?**
 

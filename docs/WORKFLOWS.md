@@ -94,12 +94,13 @@ When audits and agent runs file issues faster than anyone can triage them, synth
 ```mermaid
 flowchart LR
   BL["Open issues<br/>(every one, with comments)"] --> SB["/synthesize-backlog<br/>digest, six lenses, merge,<br/>skeptic + fit-checker"]
-  SB --> REP["Report: ranked threads,<br/>landing order, triage plan"]
-  REP --> TRK["Thread trackers for the<br/>threads you pick, members attached"]
+  SB --> REP["Report: ranked threads,<br/>landing order, triage plan<br/>(run kept for later)"]
+  REP --> TRK["/synthesize-backlog fold<br/>thread trackers for the threads<br/>you pick, now or any later session"]
   TRK --> ENTRY["/implement, /to-spec<br/>or /wayfinder"]
   REP --> TRI["/triage<br/>the issues no thread covers"]
 ```
 
 - **Threads, not topics.** A thread is one cause in the code and one change that removes it; grouping by product area doesn't count.
 - **Verified against what is live.** Agents read a detached checkout of the default branch's tip, never a local checkout that may be behind.
-- **Read-only until you pick.** The run writes only to a temp directory and a temporary detached checkout; thread trackers appear only for the threads you choose, and the next run extends them.
+- **Read-only until you pick.** The run writes only to a temp directory and a temporary detached checkout, then keeps its result outside the repo; thread trackers appear only for the threads you choose, and the next run extends them.
+- **Fold whenever.** `/synthesize-backlog fold <run-dir>` refreshes a kept run against today's issues before it writes anything, so a decision can wait days.
