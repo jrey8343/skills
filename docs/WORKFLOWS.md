@@ -94,9 +94,9 @@ When audits and agent runs file issues faster than anyone can triage them, synth
 ```mermaid
 flowchart LR
   BL["Open issues<br/>(every one, with comments)"] --> SB["/synthesize-backlog<br/>digest, six lenses, merge,<br/>skeptic + fit-checker"]
-  SB --> REP["Report: ranked threads,<br/>landing order, triage plan<br/>(run kept for later)"]
-  REP --> TRK["/synthesize-backlog fold<br/>thread trackers for the threads<br/>you pick, now or any later session"]
-  TRK --> ENTRY["/implement, /to-spec<br/>or /wayfinder"]
+  SB --> REP["Report: threads in a<br/>suggested order, triage plan<br/>(run kept for later)"]
+  REP --> TRK["/synthesize-backlog fold<br/>grilling rounds: the order,<br/>then a question per thread"]
+  TRK --> ENTRY["/grill-with-docs on the tracker<br/>(or /wayfinder on the thread),<br/>then /to-spec and /implement"]
   REP --> TRI["/triage<br/>the issues no thread covers"]
 ```
 
@@ -104,3 +104,4 @@ flowchart LR
 - **Verified against what is live.** Agents read a detached checkout of the default branch's tip, never a local checkout that may be behind.
 - **Read-only until you pick.** The run writes only to a temp directory and a temporary detached checkout, then keeps its result outside the repo; thread trackers appear only for the threads you choose, and the next run extends them.
 - **Fold whenever.** `/synthesize-backlog fold <run-dir>` refreshes a kept run against today's issues before it writes anything, so a decision can wait days.
+- **Facts are the agents'; decisions are yours.** Fold puts the order, each thread and each brief it supersedes to you as grilling rounds with recommendations, and writes only what you approve. A thread tracker is a hypothesis to grill, never a spec to build from.

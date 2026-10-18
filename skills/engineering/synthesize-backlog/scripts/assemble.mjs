@@ -16,8 +16,11 @@
 //   assemble.mjs keep <run> [--to DIR]              copy a finished run, without its checkout, somewhere durable
 //   assemble.mjs refresh <run> --open-count N [--date YYYY-MM-DD]
 //                                                   re-apply open-now.json and links.jsonl to a kept run
-//   assemble.mjs tracker <run> <id> --picked <id,id,...>   a thread tracker's body file and attach plan
-//   assemble.mjs folded <run> <id> <number>         record that a thread became thread tracker #number
+//   assemble.mjs plan <run> --order <id,…> [--leave <id>:<n>,<n>]...
+//                                                   a short card per thread in that order, for the fold round
+//   assemble.mjs thread <run> <id> [--after <id,…>] [--leave <id>:<n>,<n>]   one thread's full card
+//   assemble.mjs tracker <run> <id> [--leave <id>:<n>,<n>] [--again]   a thread tracker's body file and attach plan
+//   assemble.mjs folded <run> <id> <number> --attached <n>,<n> [--force]   record a thread tracker and what it took
 //
 // Every command exits 1 when a stage file is malformed or the stage is incomplete, naming the
 // file, so the orchestrator knows which agent to dispatch again.
@@ -233,6 +236,7 @@ export function rankingProblems(ranking) {
     if (!Number.isInteger(entry?.rank) || entry.rank < 1 || ranks.has(entry.rank)) problems.push(`ranking.json: ${entry?.id} needs a unique integer rank from 1`);
     ranks.add(entry?.rank);
     if (!strengths.includes(entry?.strength)) problems.push(`ranking.json: ${entry?.id} strength must be one of ${strengths.join(", ")}`);
+    if (entry?.why_here !== undefined && typeof entry.why_here !== "string") problems.push(`ranking.json: ${entry?.id} why_here must be a string`);
   }
   for (const field of ["sequencing", "top_recommendation", "triage_implication"]) {
     if (typeof ranking[field] !== "string") problems.push(`ranking.json: ${field} must be a string`);
@@ -440,6 +444,7 @@ export function buildSynthesis(inputs) {
     late_members: (critic?.missing_from_candidates ?? []).filter((late) => coverage.survivors.includes(late.candidate_id) && workItems.has(late.number)),
     unplaced: coverage.unplaced,
     closed_since_snapshot: closed,
+    opened_since_snapshot: openNow ? openNow.filter((number) => !snapshot.has(number)).sort(byNumber) : [],
     issues,
     ranking: { sequencing: ranking.sequencing, top_recommendation: ranking.top_recommendation, triage_implication: ranking.triage_implication, urgent: ranking.urgent },
   };
@@ -470,14 +475,14 @@ function issueEntry(number, snapshotIssue, digest) {
 function threadEntry(candidate, verdict, rank) {
   const { skeptic, fit } = verdict;
   return {
-    id: candidate.id, rank: rank.rank, strength: rank.strength, leverage_note: rank.leverage_note ?? "",
+    id: candidate.id, rank: rank.rank, strength: rank.strength, leverage_note: rank.leverage_note ?? "", why_here: rank.why_here ?? "",
     name: candidate.name, lenses: candidate.found_by_lenses, origin: candidate.origin,
     cause: verifiedCause(candidate, skeptic), change: fit.change_outline || candidate.structural_change,
     size: fit.size, entry: fit.entry_point,
     members: fit.member_fit, added: fit.additional_members ?? [],
     supersedes: fit.supersedes ?? [], depends_on: fit.depends_on ?? [], open_decisions: fit.open_decisions ?? [],
     files: fit.files_touched_estimate ?? [], evidence: skeptic.code_evidence ?? [],
-    weakest: skeptic.weakest_members ?? [], adr_conflicts: skeptic.adr_conflicts ?? [],
+    weakest: skeptic.weakest_members ?? [], adr_conflicts: (skeptic.adr_conflicts ?? []).filter((conflict) => !/^\s*(none|no adr)\b/i.test(conflict)),
     existing_proposals: candidate.existing_proposals, overlaps: candidate.overlaps,
   };
 }
@@ -489,42 +494,143 @@ export function shellTitle(name) {
   return { title, title_shell: `'${title.replace(/'/g, "'\\''")}'` };
 }
 
-// Who owns each member among the threads the user picked: an owner left unpicked gives way to
-// the best-ranked picked claimant, so no member is left attached to nothing.
-function pickedOwners(synthesis, picked) {
-  const rankOf = new Map(synthesis.threads.map((thread) => [thread.id, thread.rank]));
-  const pickedClaims = new Map(Object.entries(synthesis.claims).map(([number, list]) => [Number(number), list.filter((entry) => picked.has(entry.id))]));
-  const preferred = Object.entries(synthesis.owners).map(([number, id]) => ({ number: Number(number), id }));
-  return ownersOf(pickedClaims, (id) => rankOf.get(id), preferred);
+// The fit-checker sizes a thread's scope; whatever the scope, a thread tracker starts with the
+// user grilling it, never with building. Decisions still open mean a map, so /wayfinder.
+const scopeLabels = { implement: "one session", "to-spec": "several sessions", wayfinder: "decisions open" };
+export const scopeOf = (entry) => scopeLabels[entry] ?? entry;
+export const startsAt = (entry) => (entry === "wayfinder" ? "/wayfinder" : "/grill-with-docs");
+
+export const changeLinesShown = 15;
+
+const claimedBy = (synthesis, id) =>
+  Object.entries(synthesis.claims).filter(([, list]) => list.some((entry) => entry.id === id)).map(([number]) => Number(number)).sort(byNumber);
+
+// folded.json maps a thread id to { number, attached }: its tracker and the members it took. A
+// bare number (written before attached lists were kept) counts every member it claims as taken.
+const foldedNumber = (entry) => (typeof entry === "number" ? entry : (entry?.number ?? null));
+
+function takenMembers(synthesis, folded, exceptId) {
+  const taken = new Map();
+  for (const [id, entry] of Object.entries(folded)) {
+    if (id === exceptId) continue;
+    const members = typeof entry === "number" ? claimedBy(synthesis, id) : (entry.attached ?? []);
+    for (const number of members) if (!taken.has(number)) taken.set(number, { id, tracker: foldedNumber(entry) });
+  }
+  return taken;
 }
 
-// The issues a thread tracker attaches, and those it only lists, with the reason. `folded` is
-// folded.json: the threads earlier fold sessions already turned into thread trackers.
-export function trackerPlan(synthesis, id, pickedIds = [id], folded = {}) {
+// Marks every #N in agent prose that closed after the snapshot, wherever the prose names it.
+const closedMarker = (synthesis) => {
+  const closed = new Set(synthesis.closed_since_snapshot);
+  return (text) => String(text ?? "").replace(/(?<![\w/&#])#(\d{1,6})\b/g, (whole, digits) => (closed.has(Number(digits)) ? `${whole} (closed since the snapshot)` : whole));
+};
+
+// The issues a thread tracker attaches, and those it only lists, with the reason. A member an
+// earlier thread already took stays with it, and `leave` keeps members back for a later thread,
+// so the user's order and answers, not the ranking, decide who owns a shared member.
+export function trackerPlan(synthesis, id, folded = {}, leave = []) {
   const thread = synthesis.threads.find((entry) => entry.id === id);
   assert.ok(thread, `no surviving thread with id ${id}`);
-  const picked = new Set([...pickedIds, id]);
-  const owners = pickedOwners(synthesis, picked);
   const issues = new Map(synthesis.issues.map((issue) => [issue.number, issue]));
   const closed = new Set(synthesis.closed_since_snapshot);
+  const taken = takenMembers(synthesis, folded, id);
+  const leaving = new Set(leave);
   const existing = thread.existing_proposals.filter((number) => {
     const issue = issues.get(number);
     return issue !== undefined && (issue.state === "tracker" || issue.sub_issues.length > 0);
   });
-  const claimed = Object.entries(synthesis.claims).filter(([, list]) => list.some((entry) => entry.id === id)).map(([number]) => Number(number)).sort(byNumber);
-  const attach = [];
-  const listed = [];
-  for (const number of claimed) {
-    const owner = owners[number] ?? id;
+  const plan = { attach: [], listed: [], shared: [] };
+  for (const number of claimedBy(synthesis, id)) {
+    const others = synthesis.claims[number].map((entry) => entry.id).filter((other) => other !== id);
+    const holder = taken.get(number);
     const parent = issues.get(number)?.parent;
-    if (existing.includes(number)) listed.push({ number, reason: "the existing tracker" });
-    else if (closed.has(number)) listed.push({ number, reason: "closed since the snapshot" });
-    else if (owner !== id) listed.push({ number, reason: `owned by thread ${owner}` });
-    else if (parent) listed.push({ number, reason: `already under #${parent}` });
-    else if (attach.length >= subIssuesMax) listed.push({ number, reason: `over the ${subIssuesMax} sub-issue limit` });
-    else attach.push(number);
+    if (others.length > 0 && !holder) plan.shared.push({ number, also_in: others, suggested_owner: synthesis.owners?.[number] ?? null });
+    const reason = existing.includes(number) ? "the existing tracker"
+      : closed.has(number) ? "closed since the snapshot"
+      : holder ? (holder.tracker ? `on thread ${holder.id}'s tracker #${holder.tracker}` : `taken by thread ${holder.id}, earlier in the order`)
+      : leaving.has(number) ? "left for another thread"
+      : parent ? `already under #${parent}`
+      : plan.attach.length >= subIssuesMax ? `over the ${subIssuesMax} sub-issue limit` : null;
+    if (reason) plan.listed.push({ number, reason });
+    else plan.attach.push(number);
   }
-  return { thread, ...shellTitle(thread.name), attach, listed, existing_trackers: existing, folded_as: folded[id] ?? null };
+  return { thread, ...shellTitle(thread.name), ...plan, existing_trackers: existing, folded_as: foldedNumber(folded[id]) };
+}
+
+// Plans for the threads in the agreed order, each assuming the ones before it fold as planned,
+// so one round can put every thread to the user with the members it would really take.
+export function plansInOrder(synthesis, order, folded = {}, leaves = {}) {
+  const assumed = { ...folded };
+  return order.map((id) => {
+    const plan = trackerPlan(synthesis, id, assumed, leaves[id] ?? []);
+    if (!assumed[id] && plan.attach.length > 0) assumed[id] = { number: null, attached: plan.attach };
+    return plan;
+  });
+}
+
+const supersededBriefs = (synthesis, thread) => {
+  const issues = new Map(synthesis.issues.map((issue) => [issue.number, issue]));
+  const closed = new Set(synthesis.closed_since_snapshot);
+  return thread.supersedes.filter((number) => issues.get(number)?.state === "ready-for-agent" && !closed.has(number));
+};
+
+const sharedLine = (entry) =>
+  `#${entry.number} is also in ${entry.also_in.join(", ")}${entry.suggested_owner ? `; the ranker suggests ${entry.suggested_owner} owns it` : ""}`;
+
+// Pure: a thread's question body for the fold round: what it is, what folding it would take,
+// and what the skeptic doubts, in a few lines. The full card is threadLines.
+export function shortCardLines(synthesis, plan) {
+  const { thread } = plan;
+  const mark = closedMarker(synthesis);
+  const numbers = (list) => list.map((number) => `#${number}`).join(" ");
+  const doubts = [...thread.weakest.map((number) => `#${number} may not fit`), ...thread.adr_conflicts.map((conflict) => `ADR: ${conflict}`)];
+  const briefs = supersededBriefs(synthesis, thread);
+  return [
+    `${thread.rank}. ${thread.name} [${thread.id}] · ${thread.strength} · size ${thread.size} · scope ${scopeOf(thread.entry)}${plan.folded_as ? ` · folded as #${plan.folded_as}` : ""}`,
+    `   cause: ${mark(firstSentence(thread.cause))}`,
+    `   would attach: ${numbers(plan.attach) || "nothing"}${plan.listed.length > 0 ? `; lists ${plan.listed.map((entry) => `#${entry.number} (${entry.reason})`).join(", ")}` : ""}`,
+    ...(plan.shared.length > 0 ? [`   shares: ${plan.shared.map(sharedLine).join("; ")}`] : []),
+    ...(plan.existing_trackers.length > 0 ? [`   existing trackers it could extend: ${numbers(plan.existing_trackers)}`] : []),
+    ...(doubts.length > 0 ? [`   skeptic's doubts: ${mark(doubts.join("; "))}`] : []),
+    ...(briefs.length > 0 ? [`   ready-for-agent briefs it supersedes: ${numbers(briefs)}`] : []),
+  ];
+}
+
+// Pure: one thread's full card, for when the user wants the whole of the evidence.
+export function threadLines(synthesis, id, folded = {}, leave = []) {
+  const plan = trackerPlan(synthesis, id, folded, leave);
+  const { thread } = plan;
+  const mark = closedMarker(synthesis);
+  const issues = new Map(synthesis.issues.map((issue) => [issue.number, issue]));
+  const closed = new Set(synthesis.closed_since_snapshot);
+  const resolution = new Map(claimedBy(synthesis, id).map((number) => [number, synthesis.claims[number].find((entry) => entry.id === id).resolves]));
+  const remainder = new Map([...thread.members.map((entry) => [entry.number, entry.remainder]), ...thread.added.map((entry) => [entry.number, entry.why])]);
+  const describe = (number) => {
+    const issue = issues.get(number);
+    const state = `${issue?.state ?? "?"}${issue?.severity ? `, ${issue.severity}` : ""}${closed.has(number) ? ", closed since the snapshot" : ""}`;
+    const head = `- #${number} ${issue?.title ?? ""} [${state}] ${resolution.get(number) === "full" ? "fully" : "partly"}`;
+    return resolution.get(number) === "full" ? [head] : [head, `    still left: ${mark(remainder.get(number) || "see the report")}`];
+  };
+  const change = String(thread.change ?? "").split("\n");
+  const shownChange = change.length > changeLinesShown ? [...change.slice(0, changeLinesShown), `[${change.length - changeLinesShown} more lines in the report]`] : change;
+  const doubts = [...thread.weakest.map((number) => `- #${number} may not fit the shared cause`), ...thread.adr_conflicts.map((conflict) => `- ADR: ${conflict}`)];
+  const briefs = supersededBriefs(synthesis, thread);
+  return [
+    `THREAD ${thread.rank} of ${synthesis.threads.length}: ${thread.name} [${thread.id}]`,
+    `${thread.strength} · size ${thread.size} · scope ${scopeOf(thread.entry)} · would start at ${startsAt(thread.entry)}${plan.folded_as ? ` · folded as #${plan.folded_as}` : ""}`,
+    "", `WHY IT SITS HERE: ${mark(thread.why_here || thread.leverage_note)}`, "", `CAUSE, AS VERIFIED: ${mark(thread.cause)}`,
+    "", "CHECKED IN:", ...(thread.evidence.length > 0 ? thread.evidence.map((item) => `- ${item}`) : ["- (no evidence recorded)"]),
+    "", "A PROPOSED CHANGE (a hypothesis to grill):", ...shownChange.map(mark),
+    "", "SKEPTIC'S DOUBTS:", ...(doubts.length > 0 ? doubts.map(mark) : ["- none recorded"]),
+    "", "MEMBERS:", ...claimedBy(synthesis, id).flatMap(describe),
+    "", "OPEN DECISIONS (for the grilling the thread tracker starts with):", ...thread.open_decisions.map((decision) => `- ${mark(decision)}`),
+    "", `LANDS AFTER: ${thread.depends_on.join("; ") || "nothing"}`,
+    "", `FOLDING IT WOULD ATTACH: ${plan.attach.map((number) => `#${number}`).join(" ") || "nothing"}`,
+    `AND LIST: ${plan.listed.map((entry) => `#${entry.number} (${entry.reason})`).join(", ") || "none"}`,
+    ...plan.shared.map((entry) => `SHARED: ${sharedLine(entry)}; whichever is folded first takes it`),
+    ...(plan.existing_trackers.length > 0 ? [`EXISTING TRACKERS: ${plan.existing_trackers.map((number) => `#${number}`).join(" ")}`] : []),
+    ...(briefs.length > 0 ? [`READY-FOR-AGENT BRIEFS IT SUPERSEDES: ${briefs.map((number) => `#${number}`).join(" ")}`] : []),
+  ];
 }
 
 // Pure: a kept run's snapshot with parents and sub-issues as GitHub reports them now. Issues
@@ -555,16 +661,23 @@ function memberLines(synthesis, plan) {
   });
 }
 
+// A thread tracker is a question to grill, not a spec: the change is labelled as the agents'
+// hypothesis, and Next names grilling, never building.
 export function trackerBody(synthesis, plan) {
   const { thread } = plan;
   const members = memberLines(synthesis, plan);
   const { date, sha } = synthesis.meta;
-  const footer = `<sub>synthesize-backlog thread \`${thread.id}\`${date ? ` · ${date}` : ""}${sha ? ` · ${String(sha).slice(0, shaCharsShown)}` : ""}</sub>`;
+  const shortSha = sha ? String(sha).slice(0, shaCharsShown) : "";
+  const footer = `<sub>synthesize-backlog thread \`${thread.id}\`${date ? ` · ${date}` : ""}${shortSha ? ` · ${shortSha}` : ""}</sub>`;
   const decisions = thread.open_decisions.length > 0 ? thread.open_decisions.map((decision) => `- ${decision}`) : ["- None recorded."];
+  const hypothesis = `_A hypothesis that agents wrote from the code${shortSha ? ` at \`${shortSha}\`` : ""}. Grill it before building: it is not a spec._`;
+  const next = thread.entry === "wayfinder"
+    ? "Start with `/wayfinder`, giving it this thread as the idea to chart: it opens its own `wayfinder:map` issue, which belongs linked here. This tracker is not the map: its sub-issues are the members, not decision tickets."
+    : "Start with `/grill-with-docs` on this tracker. It settles the open decisions and turns the proposed change into a spec with `/to-spec`, or a single-session change for `/implement`.";
   const sections = (change) => [
-    "> *This was generated by AI during backlog synthesis.*", "", "## Thread", "", thread.cause, "", "## The change", "", change, "",
-    "## Members", "", ...members, "", "## Open decisions", "", ...decisions, "",
-    "## Enters at", "", `\`/${thread.entry}\`, size ${thread.size}. Lands after: ${thread.depends_on.join("; ") || "nothing"}.`, "", footer, "",
+    "> *This was generated by AI during backlog synthesis.*", "", "## Thread", "", thread.cause, "", "## A proposed change", "", hypothesis, "", change, "",
+    "## Members", "", "Members keep their own triage states.", "", ...members, "", "## Open decisions", "", ...decisions, "",
+    "## Next", "", next, "", `Scope estimate: ${scopeOf(thread.entry)}, size ${thread.size}. Lands after: ${thread.depends_on.join("; ") || "nothing"}.`, "", footer, "",
   ].join("\n");
   let body = neutraliseMentions(sections(thread.change));
   if (Buffer.byteLength(body) > trackerBodyBytesMax) {
@@ -573,6 +686,11 @@ export function trackerBody(synthesis, plan) {
   }
   return body;
 }
+
+const firstSentence = (text) => {
+  const match = /^(.+?[.!?])(\s|$)/s.exec(String(text ?? "").trim());
+  return match ? match[1] : String(text ?? "").trim();
+};
 
 function runLine(meta) {
   const parts = [meta.repo || "unknown repo", meta.date && `run ${meta.date}`, meta.sha && `code ${String(meta.sha).slice(0, shaCharsShown)}`];
@@ -585,24 +703,27 @@ function runLine(meta) {
 // thread tracker are marked too.
 export function summaryLines(synthesis, folded = {}) {
   const closed = new Set(synthesis.closed_since_snapshot);
-  const mark = (text) => String(text ?? "").replace(/(?<![\w/&#])#(\d{1,6})\b/g, (whole, digits) => (closed.has(Number(digits)) ? `${whole} (closed since the snapshot)` : whole));
-  const foldedNote = (id) => (folded[id] ? `, folded as #${folded[id]}` : "");
+  const mark = closedMarker(synthesis);
+  const foldedNote = (id) => (folded[id] ? `, folded as #${foldedNumber(folded[id])}` : "");
+  const openCount = (thread) => Object.entries(synthesis.claims).filter(([number, list]) => !closed.has(Number(number)) && list.some((entry) => entry.id === thread.id)).length;
+  const line = (thread) => `${thread.rank}. ${thread.name} [${thread.id}] ${thread.strength}, size ${thread.size}, scope ${scopeOf(thread.entry)}, ${openCount(thread)} open issues${foldedNote(thread.id)}`;
   const { urgent } = synthesis.ranking;
   const lines = [runLine(synthesis.meta), "", `URGENT (${urgent.length})`, ...urgent.map((entry) => mark(`- #${entry.number}${entry.by ? ` by ${entry.by}` : ""}: ${entry.why}`))];
   if (closed.size > 0) lines.push("", `CLOSED SINCE THE SNAPSHOT: ${[...closed].map((number) => `#${number}`).join(" ")}`);
+  const opened = synthesis.opened_since_snapshot ?? [];
+  if (opened.length > 0) lines.push(`OPENED SINCE THE SNAPSHOT (in no thread; for /triage): ${opened.map((number) => `#${number}`).join(" ")}`);
   const top = synthesis.threads[0];
-  lines.push("", `START HERE: ${top ? `${top.rank}. ${top.name} [${top.id}]` : "no thread survived"}`, mark(synthesis.ranking.top_recommendation));
-  lines.push("", "STRONG THREADS");
+  lines.push("", `SUGGESTED FIRST (a recommendation; the order is the user's): ${top ? `${top.rank}. ${top.name} [${top.id}]${foldedNote(top.id)}` : "no thread survived"}`, mark(synthesis.ranking.top_recommendation));
+  lines.push("", "STRONG THREADS, IN THE SUGGESTED ORDER");
   for (const thread of synthesis.threads.filter((entry) => entry.strength === "Strong")) {
-    const open = Object.entries(synthesis.claims).filter(([number, list]) => !closed.has(Number(number)) && list.some((entry) => entry.id === thread.id)).length;
-    lines.push(`${thread.rank}. ${thread.name} [${thread.id}] size ${thread.size}, /${thread.entry}, ${open} open issues${foldedNote(thread.id)}`);
+    lines.push(line(thread), `   why here: ${mark(thread.why_here || thread.leverage_note)}`);
   }
-  const foldedOther = synthesis.threads.filter((thread) => thread.strength !== "Strong" && folded[thread.id]);
-  if (foldedOther.length > 0) lines.push("", "ALSO FOLDED", ...foldedOther.map((thread) => `${thread.rank}. ${thread.name} [${thread.id}]${foldedNote(thread.id)}`));
+  const others = synthesis.threads.filter((thread) => thread.strength !== "Strong");
+  if (others.length > 0) lines.push("", "OTHER THREADS", ...others.map(line));
   const { counts } = synthesis;
   lines.push("", `COVERAGE: ${counts.survived} threads cover ${counts.covered} of ${counts.work_items} issues, ${counts.needs_triage_covered} of ${counts.needs_triage} needs-triage`);
   if (synthesis.unplaced.length > 0) lines.push(`UNPLACED: ${synthesis.unplaced.map((number) => `#${number}`).join(" ")}`);
-  lines.push("", "TRIAGE", mark(synthesis.ranking.triage_implication));
+  lines.push("", "TRIAGE PLAN (the run's suggestions: nothing here has been done, fold closes nothing, and counts in this prose may be stale; COVERAGE above is current)", mark(synthesis.ranking.triage_implication));
   return lines.join("\n").split("\n");
 }
 
@@ -846,6 +967,7 @@ function writeSynthesis(run, meta, openCount) {
   });
   writeJson(join(run, "synthesis.json"), synthesis);
   console.log(JSON.stringify(synthesis.counts));
+  return synthesis;
 }
 
 function commandFinal(run, rest) {
@@ -866,7 +988,8 @@ function commandRefresh(run, rest) {
     const snapshot = readJson(join(run, "snapshot.json"));
     writeJson(join(run, "snapshot.json"), applyLinks(snapshot, parseLinks(readFileSync(join(run, "links.jsonl"), "utf8"))));
   }
-  writeSynthesis(run, { ...meta, refreshed: flag(rest, "--date") ?? meta.refreshed ?? "" }, openCount);
+  const synthesis = writeSynthesis(run, { ...meta, refreshed: flag(rest, "--date") ?? meta.refreshed ?? "" }, openCount);
+  console.log(JSON.stringify({ closed_since_snapshot: synthesis.closed_since_snapshot, opened_since_snapshot: synthesis.opened_since_snapshot }));
 }
 
 function commandKeep(run, rest) {
@@ -882,12 +1005,52 @@ function commandSummary(run, rest) {
   printPage(summaryLines(loadSynthesis(run), loadFolded(run)), flag(rest, "--page"), "of the summary");
 }
 
+const idList = (text) => String(text ?? "").split(",").map((entry) => entry.trim()).filter(Boolean);
+const numberList = (text) => idList(text).map((entry) => Number(entry.replace(/^#/, "")));
+
+// Every `--leave <id>:<n>,<n>` in the arguments, as { id: [numbers] }.
+function leavesFlag(rest) {
+  const leaves = {};
+  rest.forEach((arg, index) => {
+    if (arg !== "--leave") return;
+    const [id, numbers] = String(rest[index + 1] ?? "").split(":");
+    const list = numberList(numbers);
+    if (!id || list.length === 0 || !list.every(isIssueNumber)) throw new Error("--leave takes <thread id>:<issue>,<issue>");
+    leaves[id] = [...(leaves[id] ?? []), ...list];
+  });
+  return leaves;
+}
+
+// The fold round's facts in one call: a short card per thread in the agreed order, each as if
+// the threads above it were folded as planned.
+function commandPlan(run, rest) {
+  const order = idList(flag(rest, "--order"));
+  if (order.length === 0) throw new Error("usage: assemble.mjs plan <run> --order <id,id,...> [--leave <id>:<n>,<n>]...");
+  const synthesis = loadSynthesis(run);
+  const plans = plansInOrder(synthesis, order, loadFolded(run), leavesFlag(rest));
+  const lines = [`ORDER: ${order.join(", ")} (each card assumes the threads above it fold as planned)`];
+  for (const plan of plans) lines.push("", ...shortCardLines(synthesis, plan));
+  printPage(lines, flag(rest, "--page"), "of the plan");
+}
+
+function commandThread(run, rest) {
+  const id = rest[0];
+  if (!id || id.startsWith("--")) throw new Error("usage: assemble.mjs thread <run> <id> [--after <id,id,...>] [--leave <id>:<n>,<n>]");
+  const synthesis = loadSynthesis(run);
+  const leaves = leavesFlag(rest);
+  const assumed = { ...loadFolded(run) };
+  for (const plan of plansInOrder(synthesis, idList(flag(rest, "--after")), assumed, leaves)) {
+    if (!assumed[plan.thread.id] && plan.attach.length > 0) assumed[plan.thread.id] = { number: null, attached: plan.attach };
+  }
+  printPage(threadLines(synthesis, id, assumed, leaves[id] ?? []), flag(rest, "--page"), `of thread ${id}`);
+}
+
 function commandTracker(run, rest) {
   const id = rest[0];
-  if (!id || id.startsWith("--")) throw new Error("usage: assemble.mjs tracker <run> <id> --picked <id,id,...>");
-  const picked = (flag(rest, "--picked") ?? id).split(",").map((entry) => entry.trim()).filter(Boolean);
+  if (!id || id.startsWith("--")) throw new Error("usage: assemble.mjs tracker <run> <id> [--leave <id>:<n>,<n>] [--again]");
   const synthesis = loadSynthesis(run);
-  const plan = trackerPlan(synthesis, id, picked, loadFolded(run));
+  const plan = trackerPlan(synthesis, id, loadFolded(run), leavesFlag(rest)[id] ?? []);
+  if (plan.folded_as && !rest.includes("--again")) throw new Error(`thread ${id} is already folded as #${plan.folded_as}: pass --again only to extend it`);
   if (plan.attach.length === 0 && plan.existing_trackers.length === 0) {
     throw new Error(`thread ${id} has no member to attach (${plan.listed.map((entry) => `#${entry.number}: ${entry.reason}`).join("; ")}): open no thread tracker for it`);
   }
@@ -895,24 +1058,31 @@ function commandTracker(run, rest) {
   const bodyPath = join(run, "trackers", `${id}.md`);
   writeFileSync(bodyPath, trackerBody(synthesis, plan));
   const warning = plan.attach.length < membersMin ? `only ${plan.attach.length} members to attach, fewer than a thread's ${membersMin}` : "";
-  const { title, title_shell: titleShell, attach, listed, existing_trackers: existingTrackers, folded_as: foldedAs } = plan;
-  console.log(JSON.stringify({ title, title_shell: titleShell, body_path: bodyPath, attach, listed, existing_trackers: existingTrackers, folded_as: foldedAs, warning }, null, 1));
+  const { title, title_shell: titleShell, attach, listed, shared, existing_trackers: existingTrackers, folded_as: foldedAs } = plan;
+  console.log(JSON.stringify({ title, title_shell: titleShell, body_path: bodyPath, attach, listed, shared, existing_trackers: existingTrackers, folded_as: foldedAs, warning }, null, 1));
 }
 
+// Recorded right after the tracker is created, before its members are attached, so a session
+// that stops part-way never leads the next one to open a second tracker for the same thread.
 function commandFolded(run, rest) {
   const [id, numberText] = rest;
   const number = Number(String(numberText ?? "").replace(/^#/, ""));
-  if (!id || !isIssueNumber(number)) throw new Error("usage: assemble.mjs folded <run> <id> <tracker number>");
-  if (!loadSynthesis(run).threads.some((thread) => thread.id === id)) throw new Error(`no surviving thread with id ${id}`);
-  const folded = { ...loadFolded(run), [id]: number };
+  if (!id || !isIssueNumber(number)) throw new Error("usage: assemble.mjs folded <run> <id> <tracker number> --attached <n>,<n> [--force]");
+  const synthesis = loadSynthesis(run);
+  if (!synthesis.threads.some((thread) => thread.id === id)) throw new Error(`no surviving thread with id ${id}`);
+  const previous = loadFolded(run)[id];
+  if (previous && !rest.includes("--force")) throw new Error(`thread ${id} is already recorded as folded into #${foldedNumber(previous)}: pass --force to replace it`);
+  const attached = flag(rest, "--attached") === undefined ? claimedBy(synthesis, id) : numberList(flag(rest, "--attached"));
+  if (!attached.every(isIssueNumber)) throw new Error("--attached takes issue numbers, comma-separated");
+  const folded = { ...loadFolded(run), [id]: { number, attached } };
   writeJson(join(run, "folded.json"), folded);
-  console.log(JSON.stringify({ folded: Object.keys(folded).length, [id]: number }));
+  console.log(JSON.stringify({ folded: Object.keys(folded).length, [id]: folded[id] }));
 }
 
 const commands = {
   issue: commandIssue, digests: commandDigests, threads: commandThreads, check: commandCheck, merge: commandMerge,
   "critic-candidates": commandCriticCandidates, coverage: commandCoverage, final: commandFinal, summary: commandSummary,
-  keep: commandKeep, refresh: commandRefresh, tracker: commandTracker, folded: commandFolded,
+  keep: commandKeep, refresh: commandRefresh, plan: commandPlan, thread: commandThread, tracker: commandTracker, folded: commandFolded,
 };
 
 const invokedDirectly = process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));

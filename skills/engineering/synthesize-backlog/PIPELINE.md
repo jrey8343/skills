@@ -157,7 +157,9 @@ candidate. It is refuted when the members share a topic but not a mechanism, whe
 structural change is several unrelated fixes under one name, when the change would not actually
 fix the members, when the work has already shipped, or when an ADR rules it out with no strong
 reason to reopen it. If the core holds but some members don't fit, it is NOT refuted: list those
-in weakest_members. Refute only if you remain unconvinced after reading the code.
+in weakest_members. Refute only if you remain unconvinced after reading the code. List in
+adr_conflicts only an ADR the change would contradict, and leave it empty when none does; a
+constraint an ADR places on the change belongs in verdict.
 ```
 
 ```json
@@ -174,12 +176,14 @@ remain: member_fit lists every member exactly once. Then read every digest for o
 missing from this candidate that the same change would resolve, and list them in
 additional_members.
 
-Outline the change as you would build it: modules created or deepened, the interface in a line
-or two, what call sites stop doing, any data step. Estimate its size and the files it touches;
-list open issues it supersedes, including ready-for-agent briefs it would make redundant or
-reverse; name candidates that should land first (ids from <run>/candidates/); list the open
-decisions; and say where it enters the build flow: implement (one session, clear), to-spec
-(several sessions, clear) or wayfinder (decisions still open).
+Outline the change you would propose: modules created or deepened, the interface in a line or
+two, what call sites stop doing, any data step. It is a hypothesis the user will grill, so end
+change_outline with an "Assumes:" list of what it takes for granted. Estimate its size and the files it touches; list open issues it supersedes,
+including ready-for-agent briefs it would make redundant or reverse; name candidates that
+should land first (ids from <run>/candidates/); list every decision the user must make before
+it is built; and size its scope: implement (one session once settled), to-spec (several
+sessions) or wayfinder (decisions still open). Whatever the scope, the user grills the thread
+before anything is built: entry_point only sizes it.
 ```
 
 ```json
@@ -216,19 +220,24 @@ Done when every number in unassigned.json appears exactly once across the three 
 
 ```text
 Read PRODUCT.md, <run>/coverage.json, and for each survivor its <run>/candidates/<id>.json,
-<run>/verdicts/<id>.skeptic.json and <run>/verdicts/<id>.fit.json. Rank every survivor in
-coverage.json exactly once by leverage: the issues it resolves, weighted by severity and by
-whether the cause will keep producing new issues if left, against its size and risk. Strong is
-verified, broad and clearly worth it; Worth exploring is real but narrower or costly;
-Speculative is a real cause with an uncertain payoff. Then write:
-- sequencing: the landing order as waves, each opening with a line "Wave N: …" (Wave 0 is cheap
-  and independent; later waves follow dependencies and shared files);
-- top_recommendation: the one to start with, and why;
-- triage_implication: which covered issues fold into a thread tracker instead of getting their
-  own brief; the product questions that block several threads, to ask once; the ready-for-agent
-  briefs a thread would reverse, to hold before an agent picks them up; and the uncovered issues
-  to triage individually, highest first;
-- owners: for each issue two or more survivors claim, the one thread that should own it;
+<run>/verdicts/<id>.skeptic.json and <run>/verdicts/<id>.fit.json. Suggest an order for every
+survivor in coverage.json, each exactly once, by leverage: the issues it resolves, weighted by
+severity and by whether the cause will keep producing new issues if left, against its size and
+risk. The user sets the real order when folding, so give each survivor a why_here: one sentence
+on why it sits at this position rather than higher or lower (a reason, never a size or a
+readiness label), alongside its leverage_note. Strong is verified, broad and clearly
+worth it; Worth exploring is real but narrower or costly; Speculative is a real cause with an
+uncertain payoff. Then write:
+- sequencing: a suggested landing order as waves, each opening with a line "Wave N: …" (Wave 0
+  is cheap and independent; later waves follow dependencies and shared files);
+- top_recommendation: which thread you would put first, and why, as a recommendation;
+- triage_implication, as suggestions for the user: which covered issues would fold into a
+  thread tracker if the user folds it, instead of getting their own brief; the product questions
+  that block several threads, to ask once; the ready-for-agent briefs a thread would reverse,
+  which the user may want to hold; and the uncovered issues to triage individually, highest
+  first;
+- owners: for each issue two or more survivors claim, the thread you suggest owns it (the order
+  the user folds in decides);
 - urgent: anything in the digests with a deadline or live harm that needs a step by hand before
   any thread lands, or [] when nothing does.
 Members stay open until their fix ships, so never advise closing them into a thread tracker.
@@ -236,7 +245,7 @@ Leave coverage counts out: the report computes them.
 ```
 
 ```json
-{ "ranking": [{ "id": "kebab-slug", "rank": 1, "strength": "Strong | Worth exploring | Speculative", "leverage_note": "…" }],
+{ "ranking": [{ "id": "kebab-slug", "rank": 1, "strength": "Strong | Worth exploring | Speculative", "why_here": "one sentence", "leverage_note": "…" }],
   "sequencing": "markdown", "top_recommendation": "markdown", "triage_implication": "markdown",
   "owners": [{ "number": 73, "id": "kebab-slug" }],
   "urgent": [{ "number": 64, "why": "…", "by": "2026-11-06, or empty" }] }

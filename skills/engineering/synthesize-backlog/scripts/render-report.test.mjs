@@ -99,6 +99,26 @@ test("renderReport renders a run in which no thread survived", () => {
   assert.ok(!html.includes('id="start-h"'));
 });
 
+test("renderReport presents the order as a suggestion and every thread as starting with grilling", () => {
+  const html = renderReport(synthesis());
+  assert.match(html, /<span class="eyebrow">Suggested first<\/span>/);
+  assert.match(html, /Threads, in a suggested order/);
+  assert.match(html, /<strong>Why it sits here:<\/strong> Closes/);
+  assert.match(html, /A proposed change: the fit-checker's hypothesis, to grill before building/);
+  assert.match(html, /Scope: several sessions<\/span>/);
+  assert.match(html, /Starts at \/grill-with-docs<\/span>/);
+  assert.ok(!/Start here|Enters at|>\/implement</.test(html));
+});
+
+test("renderReport shows each thread's id, marks folded threads, and words supersession as a proposal", () => {
+  const html = renderReport(synthesis(), { folded: { "one-guard": { number: 500, attached: [1] }, ghost: "x" } });
+  assert.match(html, /<span class="thread-id">one-guard<\/span>/);
+  assert.match(html, /<span class="pill folded">Folded as <a class="ref" href="https:\/\/github.com\/o\/r\/issues\/500"/);
+  assert.match(html, /<dt>Would supersede<\/dt>/);
+  assert.match(html, /<h2 id="sequence-h">Suggested landing order<\/h2>/);
+  assert.match(html, /The run itself wrote nothing to the issue tracker; fold writes only what you approve\./);
+});
+
 test("parseArgs insists on an https issue URL", () => {
   assert.throws(() => parseArgs(["s.json", "r.html", "--issue-url", "javascript:alert(1)"]), /https/);
   assert.equal(parseArgs(["s.json", "r.html"]).issueUrl, null);
