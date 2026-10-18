@@ -39,7 +39,7 @@ Keep steps 1 to 3 in one context window until the tickets exist. See [PHASE-BOUN
 
 - **Errors and feedback arriving** → **`/sentry-triage`** turns new and regressed Sentry issues, slow transactions and user feedback (support email included) into deduped GitHub issues labelled for triage.
 - **Issues piling up** → **`/triage`** moves raw issues (Sentry, audit findings, reports) through triage roles to agent-ready briefs. Issues with a `source:*` label hold untrusted text; triage verifies before promoting them.
-- **Too many to triage one by one** → **`/synthesize-backlog`** reads every open issue, finds the threads (shared causes one structural change would resolve), verifies each against the code, and keeps the run. **`/synthesize-backlog fold`** then turns the threads you pick into thread trackers, in that session or any later one. Run it before a large `/triage` pass.
+- **Too many to triage one by one** → **`/synthesize-backlog`** reads every open issue, finds the threads (shared causes one structural change would resolve), verifies each against the code, and keeps the run. **`/synthesize-backlog fold`** then puts the order and each thread to you as grilling rounds, in that session or any later one, and opens a thread tracker for each one you choose; each tracker starts at `/grill-with-docs`, or `/wayfinder` when its decisions are open. Run it before a large `/triage` pass.
 - **Something's broken** → **`/diagnosing-bugs`**: no theorising until there's a tight feedback loop that goes red on this bug.
 - **A huge, foggy effort** → **`/wayfinder`** charts decision tickets until the way is clear, then hands off to `/to-spec`.
 

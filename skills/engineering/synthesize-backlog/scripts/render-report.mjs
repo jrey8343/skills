@@ -9,10 +9,11 @@
 // the links derive from synthesis.meta.repo when that is OWNER/NAME, else numbers stay plain.
 // Every string is escaped and every number checked: issue titles and agent prose are untrusted.
 
-import { readFileSync, writeFileSync, realpathSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
+import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
-import { shaCharsShown } from "./assemble.mjs";
+import { shaCharsShown, scopeOf, startsAt } from "./assemble.mjs";
 
 export const threadsRenderedMax = 200;
 export const issuesRenderedMax = 2_000;
@@ -21,7 +22,6 @@ const lensLabels = [
   ["runtime-robustness", "Runtime robustness"], ["delivery-system", "Delivery system"], ["product-journeys", "Product journeys"],
 ];
 const strengthKey = { Strong: "strong", "Worth exploring": "worth", Speculative: "spec" };
-const entryLabel = { implement: "/implement", "to-spec": "/to-spec", wayfinder: "/wayfinder" };
 const issueReference = /(?<![\w/&#])#(\d{1,6})\b/;
 
 export const escapeHtml = (text) =>
@@ -145,7 +145,7 @@ function factList(thread, context) {
   const fact = (label, html) => `<div><dt>${label}</dt><dd>${html}</dd></div>`;
   return [
     fact("Lands after", thread.depends_on.length > 0 ? thread.depends_on.map((dependency) => inline(dependency, context)).join("; ") : "Nothing"),
-    fact("Absorbs", thread.supersedes.filter(isIssueNumber).map((number) => issueLink(number, context)).join(" ") || "None"),
+    fact("Would supersede", thread.supersedes.filter(isIssueNumber).map((number) => issueLink(number, context)).join(" ") || "None"),
     thread.files.length > 0 ? fact("Files", thread.files.map((file) => `<code>${escapeHtml(file)}</code>`).join(" ")) : "",
     thread.overlaps.length > 0 ? fact("Overlaps", list(thread.overlaps)) : "",
     thread.adr_conflicts.length > 0 ? fact("ADRs", list(thread.adr_conflicts)) : "",
@@ -159,16 +159,18 @@ function threadCard(thread, context) {
   return `
 <article class="thread" id="t-${escapeHtml(thread.id)}" data-strength="${key}" data-entry="${escapeHtml(thread.entry)}">
   <header class="thread-head"><span class="rank">${thread.rank}</span><div class="head-text">
-    <h3>${inline(thread.name, context)}</h3>
+    <h3>${inline(thread.name, context)} <span class="thread-id">${escapeHtml(thread.id)}</span></h3>
     <div class="meta"><span class="badge ${key}">${escapeHtml(thread.strength)}</span>
+      ${context.folded[thread.id] ? `<span class="pill folded">Folded as ${issueLink(context.folded[thread.id], context)}</span>` : ""}
       <span class="pill" title="Size of the change">Size ${escapeHtml(thread.size)}</span>
-      <span class="pill entry" title="Where it enters the build flow">${escapeHtml(entryLabel[thread.entry] ?? thread.entry)}</span>
+      <span class="pill" title="The fit-checker's estimate of the work">Scope: ${escapeHtml(scopeOf(thread.entry))}</span>
+      <span class="pill entry" title="A thread tracker starts with you grilling it, never with building">Starts at ${escapeHtml(startsAt(thread.entry))}</span>
       ${lensDots(thread.lenses)}<span class="count">${chips.full} fully · ${chips.partial} partly</span></div>
   </div></header>
-  <p class="leverage">${inline(thread.leverage_note, context)}</p>
+  <p class="leverage"><strong>Why it sits here:</strong> ${inline(thread.leverage_note, context)}</p>
   <div class="chips">${chips.html}</div>
   <details><summary>Shared cause, as verified in the code</summary><div class="body"><p>${inline(thread.cause, context)}</p>${evidence}</div></details>
-  <details><summary>The change, as the fit-checker would build it</summary><div class="body">${markdown(thread.change, context)}</div></details>
+  <details><summary>A proposed change: the fit-checker's hypothesis, to grill before building</summary><div class="body">${markdown(thread.change, context)}</div></details>
   ${remainderList(thread, context)}
   <details><summary>Open decisions (${thread.open_decisions.length})</summary><div class="body"><ul>${thread.open_decisions.map((decision) => `<li>${inline(decision, context)}</li>`).join("")}</ul></div></details>
   <dl class="facts">${factList(thread, context)}</dl>
@@ -215,11 +217,11 @@ function threadsSection(synthesis, context) {
   const tally = (strength) => synthesis.threads.filter((thread) => thread.strength === strength).length;
   const button = (value, label, pressed = false) => `<button type="button" class="filter-button" data-v="${value}" aria-pressed="${pressed}">${label}</button>`;
   return `
-  <section aria-labelledby="threads-h"><h2 id="threads-h">Threads, ranked by leverage</h2>
-    <p class="small">Each thread is one shared cause and one structural change. A skeptic tried to refute it against the code; a fit-checker read every member issue and decided whether the change solves it fully, partly or not at all.</p>
+  <section aria-labelledby="threads-h"><h2 id="threads-h">Threads, in a suggested order</h2>
+    <p class="small">Each thread is one shared cause and one structural change. A skeptic tried to refute it against the code; a fit-checker read every member issue and decided whether the change solves it fully, partly or not at all. The order is the ranker's suggestion, with its reason on each card: you set the real order, one thread at a time, when you fold.</p>
     <div class="filters">
       <div class="filter-group" data-filter="strength"><span class="eyebrow">Strength</span>${button("all", `All ${synthesis.threads.length}`, true)}${button("strong", `Strong ${tally("Strong")}`)}${button("worth", `Worth exploring ${tally("Worth exploring")}`)}${button("spec", `Speculative ${tally("Speculative")}`)}</div>
-      <div class="filter-group" data-filter="entry"><span class="eyebrow">Enters at</span>${button("all", "Any", true)}${button("implement", "/implement")}${button("to-spec", "/to-spec")}${button("wayfinder", "/wayfinder")}</div>
+      <div class="filter-group" data-filter="entry"><span class="eyebrow">Scope</span>${button("all", "Any", true)}${button("implement", scopeOf("implement"))}${button("to-spec", scopeOf("to-spec"))}${button("wayfinder", scopeOf("wayfinder"))}</div>
     </div>
     <div class="threads">${synthesis.threads.length > 0 ? synthesis.threads.map((thread) => threadCard(thread, context)).join("") : "<p>No thread survived verification.</p>"}</div>
   </section>`;
@@ -257,7 +259,7 @@ function restSections(synthesis, context) {
   const dropped = synthesis.dropped.map((entry) => `<li><strong>${inline(entry.name, context)}</strong><p>${inline(entry.reason.replace(/^skeptic: /, ""), context)}</p></li>`).join("");
   const rejected = synthesis.rejected.map((entry) => `<li><strong>${inline(entry.name, context)}</strong> ${inline(entry.reason, context)}</li>`).join("");
   return `
-  <section aria-labelledby="sequence-h"><h2 id="sequence-h">Landing order</h2><div class="prose">${markdown(synthesis.ranking.sequencing, context)}</div></section>
+  <section aria-labelledby="sequence-h"><h2 id="sequence-h">Suggested landing order</h2><div class="prose">${markdown(synthesis.ranking.sequencing, context)}</div></section>
   <section aria-labelledby="triage-h"><h2 id="triage-h">What this means for triage</h2><div class="prose">${markdown(synthesis.ranking.triage_implication, context)}</div></section>
   <section aria-labelledby="alone-h"><h2 id="alone-h">Issues that stand alone (${synthesis.standalone.length})</h2>
     <p class="small">The completeness critic placed every issue no verified thread claimed: into a thread it was missed from, or here, with the reason it stands alone.</p>
@@ -266,7 +268,7 @@ function restSections(synthesis, context) {
     <p class="small">Dropped at verification, with the skeptic's reason.</p><ol class="dropped">${dropped || "<li>None.</li>"}</ol>
     <p class="small"><strong>Rejected at merge:</strong></p><ul class="dropped">${rejected || "<li>None.</li>"}</ul></section>
   <section aria-labelledby="how-h"><h2 id="how-h">How this was made</h2>
-    <p class="small">Every open issue was snapshotted with its comments and digested for its mechanism. Six lenses (architecture, domain invariants, identity and access, runtime robustness, the delivery system, product journeys) proposed threads confirmed in code; a merge grouped them into candidates; for each candidate a skeptic tried to refute it and a fit-checker ruled on every member; a completeness critic placed what no thread claimed; a ranker weighed leverage against cost. Nothing was written to the issue tracker.</p></section>`;
+    <p class="small">Every open issue was snapshotted with its comments and digested for its mechanism. Six lenses (architecture, domain invariants, identity and access, runtime robustness, the delivery system, product journeys) proposed threads confirmed in code; a merge grouped them into candidates; for each candidate a skeptic tried to refute it and a fit-checker ruled on every member; a completeness critic placed what no thread claimed; a ranker weighed leverage against cost and suggested an order. The run itself wrote nothing to the issue tracker; fold writes only what you approve.</p></section>`;
 }
 
 const scriptSafe = (value) => JSON.stringify(value).replace(/</g, "\\u003c");
@@ -313,11 +315,16 @@ function assertRenderable(synthesis) {
   }
 }
 
-export function renderReport(synthesis, { issueUrl = null } = {}) {
+// `folded` is the run's folded.json, when fold has opened thread trackers: each card says so.
+export function renderReport(synthesis, { issueUrl = null, folded = {} } = {}) {
   assertRenderable(synthesis);
   const repo = String(synthesis.meta?.repo ?? "");
   const derivedUrl = /^[\w.-]+\/[\w.-]+$/.test(repo) ? `https://github.com/${repo}/issues/` : null;
+  const foldedNumbers = Object.entries(folded)
+    .map(([id, entry]) => [id, typeof entry === "number" ? entry : entry?.number])
+    .filter(([, number]) => isIssueNumber(number));
   const context = {
+    folded: Object.fromEntries(foldedNumbers),
     issues: new Map(synthesis.issues.map((issue) => [issue.number, issue])),
     closed: new Set(synthesis.closed_since_snapshot ?? []),
     claims: synthesis.claims ?? {},
@@ -326,7 +333,7 @@ export function renderReport(synthesis, { issueUrl = null } = {}) {
     title: `${repo.split("/").pop() || "Backlog"} backlog threads`.replace(/^\w/, (first) => first.toUpperCase()),
   };
   const top = synthesis.threads[0];
-  const start = top ? `<section class="start" aria-labelledby="start-h"><span class="eyebrow">Start here</span><h2 id="start-h">${inline(top.name, context)}</h2><div class="prose">${markdown(synthesis.ranking.top_recommendation, context)}</div></section>` : "";
+  const start = top ? `<section class="start" aria-labelledby="start-h"><span class="eyebrow">Suggested first</span><h2 id="start-h">${inline(top.name, context)}</h2><div class="prose">${markdown(synthesis.ranking.top_recommendation, context)}</div></section>` : "";
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${escapeHtml(context.title)}</title>
@@ -401,6 +408,8 @@ header.top { display:grid; gap:14px; } .lede { font-size:17px; max-width:64ch; }
 .badge { font-family:var(--mono); font-size:12px; padding:2px 8px; border-radius:3px; border:1px solid; }
 .badge.strong { color:var(--strong); background:var(--strong-bg); } .badge.worth { color:var(--worth); background:var(--worth-bg); } .badge.spec { color:var(--spec); background:var(--spec-bg); }
 .pill { font-family:var(--mono); font-size:12px; color:var(--muted); border:1px solid var(--rule); padding:1px 7px; border-radius:3px; } .pill.entry { color:var(--accent); }
+.pill.folded { color:var(--strong); border-color:var(--strong); }
+.thread-id { font-family:var(--mono); font-size:12px; font-weight:400; color:var(--muted); overflow-wrap:anywhere; }
 .lenses { display:inline-flex; gap:3px; align-items:center; }
 .dot { width:8px; height:8px; border-radius:50%; border:1px solid var(--muted); display:inline-block; } .dot.on { background:var(--ink); border-color:var(--ink); }
 .lens-count, .count { margin-left:5px; color:var(--muted); font-size:12px; } .count { font-family:var(--mono); }
@@ -444,7 +453,9 @@ const invokedDirectly = process.argv[1] && realpathSync(process.argv[1]) === rea
 if (invokedDirectly) {
   try {
     const options = parseArgs(process.argv.slice(2));
-    const html = renderReport(JSON.parse(readFileSync(options.input, "utf8")), options);
+    const foldedPath = join(dirname(options.input), "folded.json");
+    const folded = existsSync(foldedPath) ? JSON.parse(readFileSync(foldedPath, "utf8")) : {};
+    const html = renderReport(JSON.parse(readFileSync(options.input, "utf8")), { ...options, folded });
     writeFileSync(options.output, html);
     console.log(`wrote ${options.output} (${Buffer.byteLength(html)} bytes)`);
   } catch (error) {
