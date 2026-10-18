@@ -6,12 +6,12 @@ Installs a GitHub Actions workflow that runs the audit skills on their cadence (
 
 ## When to reach for it
 
-You invoke this by typing `/schedule-audits`, and the agent won't reach for it on its own. Reach for it once the audits are worth running unattended: after [setup-standards](setup-standards.md), ideally after [prune-docs](../audits/prune-docs.md) (every run loads `CLAUDE.md`) and [adopt-1password](adopt-1password.md) (the workflow reads its CI vault). Re-run it whenever you edit `docs/agents/audits.md`. To run one audit once, just type the audit's own command instead.
+You invoke this by typing `/schedule-audits`, and the agent won't reach for it on its own. Reach for it once the audits are worth running unattended: after [setup-standards](setup-standards.md), ideally after [prune-docs](../audits/prune-docs.md) (every run loads `CLAUDE.md`) and [adopt-1password](adopt-1password.md) (the workflow loads its tokens from 1Password, from a vault of its own). Re-run it whenever you edit `docs/agents/audits.md`. To run one audit once, just type the audit's own command instead.
 
 ## Prerequisites
 
 - `docs/agents/audits.md` and `docs/agents/triage-labels.md` from [setup-standards](setup-standards.md).
-- A 1Password CI vault holding `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) plus read-only Sentry and Cloudflare tokens where used, a read-only service account, and `OP_SERVICE_ACCOUNT_TOKEN` as the only GitHub secret. The skill builds a wizard for the parts only you can do.
+- A 1Password vault for the audits alone, never the deploy vault. It holds `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) plus read-only Sentry and Cloudflare tokens where used. It needs a service account that can read only that vault, with that account's token as `OP_SERVICE_ACCOUNT_TOKEN` in an `audits` GitHub environment limited to the default branch. That is the only GitHub secret. The skill builds a wizard for the parts only you can do.
 - Writes: `.github/workflows/claude-audits.yml`, on a branch, as a PR.
 
 ## The three jobs
@@ -40,6 +40,7 @@ Not for analysis: it uses the workflow's own read-only token. Only the optional 
 - Each audit's tracking issue appears on schedule, listing its findings, and closes the previous run's.
 - Re-runs don't create duplicates; fixed-then-broken findings come back labelled `regression`.
 - The Actions tab shows runs skipped on quiet weeks.
+- Each analyse log's "Report permission denials" step lists nothing an audit needed, and no tracking summary says an MCP server failed to connect or that its subagents hadn't reported back.
 
 ## Where it fits
 

@@ -27,7 +27,7 @@ Also read `docs/agents/stack.md` (Sentry in use? Cloudflare?) and `docs/agents/t
 
 ## 2. Prerequisites
 
-Check each row of [PREREQUISITES.md](PREREQUISITES.md). For anything missing that only a human can do (vault items, the service account, the GitHub secret, the `workflow` scope), call the Skill tool with "wizard" to build a script for it. Never ask for, read or print a token value.
+Check each row of [PREREQUISITES.md](PREREQUISITES.md). For anything missing that only a human can do (vault items, the service account, the GitHub secret, the `workflow` scope), call the Skill tool with "wizard" to build a script for it. The `audits` environment holds no value, so create it yourself with `gh api` before the wizard sets its secret. Never ask for, read or print a token value.
 
 ## 3. Render the workflow
 
@@ -37,8 +37,9 @@ Render [WORKFLOW-TEMPLATE.yml](WORKFLOW-TEMPLATE.yml):
 - `AUDITS_JSON`: the entries from step 1, as one compact line;
 - `SKILLS_REF`: the current commit of `jrey8343/skills` (`gh api repos/jrey8343/skills/commits/main --jq .sha`), pinned so a change to the skills never silently changes CI;
 - `SCHEDULED_DRY_RUN`: `"true"` on first install, so the first week of scheduled runs only plans; the user flips it to `"false"` afterwards;
-- `{{ci_vault}}`, `{{triage_label}}` and `{{playwright_mcp_version}}` (check `npm view @playwright/mcp version`);
-- keep the `# if:sentry`, `# if:cloudflare` and `# if:persona-review` lines only when they apply, and remove the markers.
+- `{{ci_vault}}` (the audits vault from PREREQUISITES.md, never a deploy vault), `{{triage_label}}` and `{{playwright_mcp_version}}` (check `npm view @playwright/mcp version`);
+- keep the `# if:sentry`, `# if:cloudflare` and `# if:persona-review` lines only when they apply, and remove the markers;
+- anything this repo needs beyond the template, such as steps that boot persona-review's live target on the runner: add the steps before "Write MCP config", and tell the model about them by extending the `--append-system-prompt` string, not by adding a second flag.
 
 Then keep the header comment and delete the template's VERIFY block, after checking those items against the current claude-code-action README (`action.yml` inputs, `structured_output`) and Claude Code's permission-rule docs. Note what you could and couldn't confirm.
 
@@ -46,7 +47,9 @@ Validate:
 
 - `actionlint .github/workflows/claude-audits.yml` if installed; otherwise at least parse it (`python3 -c 'import yaml,sys; yaml.safe_load(open(sys.argv[1]))' .github/workflows/claude-audits.yml`);
 - `permissions: {}` at the top, and `issues: write` only on `publish`;
-- `--disallowedTools` includes `Edit`, `WebFetch` and `WebSearch`, and nothing in `--allowedTools` allows a shell beyond the read-only git patterns.
+- `--disallowedTools` includes `Edit`, `WebFetch` and `WebSearch`, and nothing in `--allowedTools` allows a shell beyond the read-only git patterns;
+- file writes are allowed only by `Edit(<runner temp>/*.json)` and `Edit(<runner temp>/*.html)` (a `Write(path)` rule is never consulted), the subagent tool is `Agent` (not `Task`), and `--strict-mcp-config` is present;
+- the analyse job has `environment: audits` and the "Run the audit" step sets `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`.
 
 ## 4. Open a PR
 
@@ -64,6 +67,11 @@ gh run watch
 ```
 
 A good run passes all three jobs, and the publish log shows planned operations without writing any. If an analyse job fails on structured output or permissions, fix the rendered workflow, not the skills.
+
+Green jobs aren't enough on their own. For each run, also read:
+
+- the analyse log's "Report permission denials" step: every refused tool call, by tool and the start of its input. A denial of something the audit needs is a workflow bug; shell habits the prompt already names are noise;
+- the tracking summary in the publish log (`trackingBody`): an audit that says an MCP server failed to connect, or that its subagents hadn't reported back, has a setup problem even when every job passed.
 
 Tell the user:
 
