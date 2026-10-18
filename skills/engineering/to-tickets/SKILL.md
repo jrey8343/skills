@@ -39,7 +39,13 @@ Give each ticket its **blocking edges**: the other tickets that must complete be
 
 **Wide refactors are the exception to vertical slicing.** A **wide refactor** is one mechanical change (rename a column, retype a shared symbol) whose **blast radius** fans across the whole codebase, so a single edit breaks thousands of call sites at once and no vertical slice can land green. Don't force it into a tracer bullet; sequence it as **expand–contract**. First expand: add the new form beside the old so nothing breaks. Then migrate the call sites over in batches sized by blast radius (per package, per directory), each batch its own ticket blocked by the expand, keeping CI green batch to batch because the old form still exists. Finally contract: delete the old form once no caller remains, in a ticket blocked by every migrate batch. When even the batches can't stay green alone, keep the sequence but let them share an integration branch that all block a final integrate-and-verify ticket; green is promised only there.
 
-### 4. Quiz the user
+### 4. Distribute the model changes
+
+If the source spec has a `## Model changes` section, or the conversation left **pending** model changes (glossary terms, ADRs, avatars, journeys), hand each entry to the ticket whose slice uses it, verbatim and whole. An entry no slice touches goes to the first ticket: the prefactor, or the first unblocked slice. A docs-only ticket is a horizontal slice, so there is never a ticket whose only job is the glossary.
+
+An entry may ride more than one ticket when more than one slice needs it; whichever lands first applies it, and the rest find it already there.
+
+### 5. Quiz the user
 
 Present the proposed breakdown as a numbered list. For each ticket, show:
 
@@ -55,7 +61,7 @@ Ask the user:
 
 Iterate until the user approves the breakdown.
 
-### 5. Publish the tickets to the configured tracker
+### 6. Publish the tickets to the configured tracker
 
 Publish the approved tickets. **How** depends on the tracker `/setup-standards` configured; the tickets are the same either way, only the shape of the blocking edges changes:
 
@@ -75,6 +81,8 @@ Do NOT close or modify any parent issue.
 **Blocked by:** the numbers/titles of the tickets that gate this one, or "None (can start immediately)".
 
 **Status:** ready-for-agent
+
+**Model changes:** each glossary term, ADR, avatar or journey this ticket applies: the file it lands in, its full text, and the text it replaces. Omit when there are none.
 
 - [ ] Acceptance criterion 1
 - [ ] Acceptance criterion 2
@@ -96,10 +104,14 @@ The end-to-end behaviour this ticket makes work, from the user's perspective, no
 - [ ] Criterion 1
 - [ ] Criterion 2
 
+## Model changes
+
+Each glossary term, ADR, avatar or journey this ticket applies: the file it lands in, its full text, and the text it replaces. Omit this section when there are none.
+
 ## Blocked by
 
 - A reference to each blocking ticket, or "None (can start immediately)". Omit this section when blockers were set as native edges.
 
 </issue-template>
 
-In either form, avoid specific file paths or code snippets: they go stale fast. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it and note briefly that it came from a prototype. Trim to the decision-rich parts, not a working demo, just the important bits.
+In either form, avoid specific file paths or code snippets: they go stale fast. A model change's target file is not one of these: it is the entry's address, and it belongs in the ticket. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it and note briefly that it came from a prototype. Trim to the decision-rich parts, not a working demo, just the important bits.

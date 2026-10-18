@@ -25,6 +25,8 @@ An issue tracker and triage labels configured by [setup-standards](../setup/setu
 
 The spec keeps what you settled while grilling (the solution's shape, the trade-offs, what you refused) after the conversation is cleared. If it states something you never said, that's a defect. User stories name avatars and the journey each serves, so a story serving no journey shows up as either a new journey or scope creep.
 
+It is also the **carrier** for the session's model changes. A term or ADR settled during [grill-with-docs](grill-with-docs.md) is never written into your checkout; it arrives here, in a `## Model changes` section, with its full text and the text it replaces. [implement](implement.md) applies those entries in its worktree, so the vocabulary lands in the same PR as the code — and your root checkout is never left holding an uncommitted glossary edit.
+
 ## Seams before prose
 
 Before writing, it sketches the seams where the feature will be tested and checks them with you, preferring existing seams and the highest seam possible. [tdd](tdd.md) works only at agreed seams, and [review-changes](review-changes.md) checks the diff against the spec, so the seam conversation matters here.
@@ -45,7 +47,7 @@ Often you should. The spec earns its step only on multi-session work, where tick
 
 **Do I keep the spec in sync once tickets start?**
 
-Nothing keeps it in sync; treat it as a snapshot. Lasting knowledge goes in `GLOSSARY.md`, ADRs and feature docs.
+Nothing keeps it in sync; treat it as a snapshot. Lasting knowledge goes in `GLOSSARY.md`, ADRs and feature docs — by way of the `## Model changes` section, which the build applies and then the spec's copy is just history.
 
 **My work is a refactor, not a feature.**
 
@@ -57,6 +59,7 @@ The template leans on user stories, which fit architecture work badly. Use the i
 - It shows you the seams first, and proposes as few as it can.
 - User stories name your avatars and journey ids, not generic "users".
 - The `## Product review` section holds real verdicts, and a negative one stopped to ask you.
+- Every term and ADR the grill settled appears under `## Model changes`, word for word, with the definition it replaces quoted beside it.
 - You remember making every decision in it.
 
 ## Where it fits

@@ -4,7 +4,7 @@
 
 `implement-spec` takes a spec and its tickets and lands the whole thing in one run. The orchestrating agent hands each ticket to an implementer sub-agent in its own git worktree, merges each finished branch into one **integration branch**, runs [review-changes](review-changes.md) over the result, checks the definition of done across the whole spec, and resolves the tickets.
 
-It reads the tickets as a **task graph**, not a list. Blocking edges decide what can start, so at any moment there is a **frontier** of unblocked tickets, and every ticket on the frontier runs at once. Each implementer works in the house style, builds test-first, and meets the same definition of done as [implement](implement.md): tests, journey links, feature docs, user docs, ADRs.
+It reads the tickets as a **task graph**, not a list. Blocking edges decide what can start, so at any moment there is a **frontier** of unblocked tickets, and every ticket on the frontier runs at once. Each implementer works in the house style, builds test-first, and meets the same definition of done as [implement](implement.md): tests, model changes, journey links, feature docs, user docs, ADRs.
 
 ## When to reach for it
 
@@ -26,6 +26,8 @@ You invoke this by typing `/implement-spec`; the agent won't reach for it on its
 ## The integration branch
 
 Each implementer confirms its worktree is based on the integration branch, builds its ticket with [house-style](house-style.md) and [tdd](tdd.md), and merges the integration tip into its own branch before reporting done, so landing it is a fast-forward. A draft PR opens only if the tracker closes work through PRs or you ask for one.
+
+The spec's `## Model changes` entries are applied to the integration branch first, in one commit, before any implementer starts. Doing it once here is the point: twelve worktrees each editing `GLOSSARY.md` is twelve conflicts, and every implementer then builds against the settled vocabulary rather than coining its own.
 
 The integration branch has its own worktree, made by [worktree](worktree.md), so your main checkout stays free while the run goes on. At the end, the same skill's sweep, run with `--into <integration-branch>`, removes every implementer worktree whose branch has merged into the integration branch. The integration worktree is removed by a later sweep, once its PR merges.
 
@@ -54,6 +56,7 @@ GitHub's blocked-by count only drops when the blocker closes, usually at the end
 - Several implementers run at once whenever the graph allows.
 - Every ticket's trace shows `tdd` running, with a failing test before the code.
 - Merges into the integration branch are fast-forwards.
+- The glossary and ADR commit sits at the base of the integration branch, before the first ticket, and no implementer re-edits those files.
 - The run ends on one branch with every ticket resolved and the feature and user docs updated.
 
 ## Where it fits

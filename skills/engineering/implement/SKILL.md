@@ -23,6 +23,7 @@ Once done, call the Skill tool with "review-changes" to review the work.
 The work is done when every line below holds, or you have told the user why one doesn't apply:
 
 - **Tests** pass at the agreed seams, and the full suite is green.
+- **Model changes**: every **pending** model change on the carrier you are working from — the spec's `## Model changes` section, the ticket, or the conversation — is applied to its file in this worktree, verbatim. The vocabulary the work uses lands in the same PR as the work.
 - **Journeys**: if the work adds or changes how an avatar completes a journey, its links are current (call the Skill tool with "product-modeling").
 - **Feature doc**: the affected `docs/features/` page describes the new behaviour and its `verified-at` is bumped (call the Skill tool with "project-docs").
 - **User doc**: if the change is user-visible, the user doc is updated where `docs/agents/docs-targets.md` says it lives. That is often another repo: make the change on a branch there and open a PR referencing this work. If you can't reach that repo, say so and file it to the issue tracker instead.

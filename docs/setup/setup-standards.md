@@ -4,7 +4,7 @@
 
 Configures a repo so every other skill knows where things live. It records the issue tracker and labels, where the domain and product docs go, what the stack is, where feature and user docs live, and which audits run how often. It also writes `CODING_STANDARDS.md` from the house style. Then it measures the repo against the target state and offers a roadmap of gaps as issues.
 
-It writes configuration and docs, never application code. Every file is shown to you as a draft before it lands.
+It writes configuration and docs, never application code. Every file is shown to you as a draft before it lands, and the files land in their own worktree, ending as a docs-only PR — so you review the repo's new law as a diff, and the checkout you work from is never left holding a dozen untracked files.
 
 ## When to reach for it
 
@@ -40,6 +40,7 @@ For the audits to file issues, yes. Other trackers work for specs and tickets; a
 
 - Skills stop asking you where things are.
 - The gap list shrinks every time you re-run it.
+- The run ends with a PR URL, and `git status` in the checkout you started from is clean.
 
 ## Where it fits
 

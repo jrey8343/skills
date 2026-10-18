@@ -6,6 +6,8 @@
 
 Every ticket is a **tracer bullet**: a narrow but complete path through every layer of the change (schema, API, UI, tests) that you can demo on its own as soon as it lands. This is what makes the skill different from the obvious way to split work, which is to cut one layer at a time and integrate at the end. It also sizes each ticket to fit in a single fresh context window, because a session that has never seen your spec will pick the ticket up.
 
+That last point is why the tickets also carry the spec's **model changes**. A ticket is read by a session that was not in the grilling conversation, so a glossary term or ADR the slice depends on travels with it, verbatim, in the ticket's own `## Model changes` section.
+
 ## When to reach for it
 
 You invoke this by typing `/to-tickets`. The agent won't reach for it on its own.
@@ -86,7 +88,8 @@ The skill stops at the artifact, and there is no auto-dispatch mode. Dispatch is
 - Every ticket has an answer to "what can I demo when this is done?", and the answer is behaviour, not a layer.
 - The list comes back to you numbered, with a "Blocked by" line on each, before anything is published.
 - The ticket at the top has no blockers and can be started immediately.
-- Nothing in a ticket body is a file path or a line number, except a snippet a prototype produced.
+- Nothing in a ticket body is a file path or a line number, except a snippet a prototype produced, or the file a model change lands in.
+- A term or ADR the spec settled appears on the ticket whose slice uses it, in full, and no ticket exists whose only job is to edit the glossary.
 - Each ticket reads like something a fresh session could finish without you in the room.
 - Prefactoring, where it found any, is at the front of the order rather than mixed into feature tickets.
 

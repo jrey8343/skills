@@ -78,7 +78,7 @@ Model-invoked:
 
 User-invoked:
 
-- [grill-with-docs](skills/engineering/grill-with-docs/SKILL.md): a relentless interview that also updates the glossary and ADRs. ([docs](docs/engineering/grill-with-docs.md))
+- [grill-with-docs](skills/engineering/grill-with-docs/SKILL.md): a relentless interview that also settles the glossary terms and ADRs, and sends them to the branch that will carry them. ([docs](docs/engineering/grill-with-docs.md))
 - [to-spec](skills/engineering/to-spec/SKILL.md): turn the conversation into a spec, gated by product and persona review. ([docs](docs/engineering/to-spec.md))
 - [to-tickets](skills/engineering/to-tickets/SKILL.md): split a spec into tracer-bullet tickets with blocking edges. ([docs](docs/engineering/to-tickets.md))
 - [implement](skills/engineering/implement/SKILL.md): implement a spec or ticket, through to tests and docs. ([docs](docs/engineering/implement.md))

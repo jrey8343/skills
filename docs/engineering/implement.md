@@ -4,7 +4,7 @@
 
 `implement` builds work that has already been decided. You point it at a ticket, a spec, or the plan you just agreed in the conversation, and it writes the code in the house style, drives [tdd](tdd.md) at the seams, typechecks as it goes, and runs [review-changes](review-changes.md) at the end. It works in its own worktree, so your main checkout and other sessions are untouched, and it ends by pushing the branch and opening a PR that closes the ticket.
 
-It never reopens the plan, and it doesn't stop at green tests. Its **definition of done** includes the paperwork that usually rots: journey links updated, the feature doc refreshed with its `verified-at` bumped, the user doc changed when the change is user-visible (often a PR in the marketing repo), and an ADR offered when a hard-to-reverse decision was made.
+It never reopens the plan, and it doesn't stop at green tests. Its **definition of done** includes the paperwork that usually rots: the model changes its carrier brought (the glossary terms and ADRs settled while planning, which the planning session deliberately did not write), journey links updated, the feature doc refreshed with its `verified-at` bumped, the user doc changed when the change is user-visible (often a PR in the marketing repo), and an ADR offered when a hard-to-reverse decision was made.
 
 ## When to reach for it
 
@@ -30,6 +30,7 @@ A run is done when each line holds, or it has told you why one doesn't apply:
 | Item | What it means |
 | --- | --- |
 | Tests | Green at the agreed seams, full suite green. |
+| Model changes | Every glossary term, ADR, avatar or journey the spec, ticket or conversation carried is applied verbatim to its file in this worktree. |
 | Journeys | Links current for any journey the work touched. |
 | Feature doc | `docs/features/<feature>.md` describes the new behaviour; `verified-at` bumped. |
 | User doc | Updated where the docs target says, usually a PR in the marketing repo. |
@@ -61,7 +62,7 @@ Because user docs live there, and a user-visible change without a doc update is 
 
 - It opens by restating what it will build, rather than asking what to build.
 - A `house-style` and a `tdd` Skill tool call appear in the trace.
-- The run ends with a PR URL, with the feature doc and journey links updated in the same diff.
+- The run ends with a PR URL, with the glossary terms, feature doc and journey links updated in the same diff as the code.
 - Your main checkout's `git status` is untouched; the work happened in `.claude/worktrees/<issue>-<slug>`.
 - User-visible changes come with a docs PR, or an issue saying why not.
 

@@ -2,7 +2,7 @@
 
 ## What it does
 
-Works out what a product is, who it serves and what they come to do, from the evidence in the code. Then it grills you until that picture is true, and writes it down as `PRODUCT.md`, avatars, journeys and a seed `GLOSSARY.md`.
+Works out what a product is, who it serves and what they come to do, from the evidence in the code. Then it grills you until that picture is true, and writes it down as `PRODUCT.md`, avatars, journeys and a seed `GLOSSARY.md`. The model is the deliverable here, so it writes those files in their own worktree and ends as a docs-only PR: you read the whole model as a diff and merge it when it rings true.
 
 It starts from the code rather than a blank page. Roles and guards say who logs in; routes, navigation and e2e test names say what they do; schema and UI copy say what things are called. Your job is to supply the why: purpose, principles, non-goals, and what each avatar fears or needs.
 
@@ -30,6 +30,7 @@ The skill says so, quoting the code. Either the code is wrong (file it) or the m
 
 - Product and persona reviews cite your principles and non-goals back at you.
 - Specs name avatars and journey ids without being asked.
+- The model arrives as a PR you can read end to end, not as untracked files in the checkout you ran it from.
 
 ## Where it fits
 

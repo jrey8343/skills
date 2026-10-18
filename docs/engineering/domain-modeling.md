@@ -4,11 +4,13 @@
 
 `domain-modeling` builds and sharpens a project's **ubiquitous language** while you are designing. It challenges a term that conflicts with the glossary, asks for a precise word where you used a vague one, and tests a relationship against a concrete scenario until the boundaries are exact.
 
-It is the **active** discipline, not the passive one. Any skill can read `GLOSSARY.md` to borrow its vocabulary. This skill is for when you are *changing* the model, which is why it interrupts you. It writes a term into `GLOSSARY.md` at the moment you settle it, in the middle of the conversation, rather than producing a tidy glossary at the end. A glossary written at the end is a summary of a session; the inline version is the session's output.
+It is the **active** discipline, not the passive one. Any skill can read `GLOSSARY.md` to borrow its vocabulary. This skill is for when you are *changing* the model, which is why it interrupts you. It settles a term at the moment you reach it, in the middle of the conversation, rather than producing a tidy glossary at the end. A glossary written at the end is a summary of a session; the term-by-term version is the session's output.
+
+Where that term gets *written* is the second constraint. A design session in your main checkout writes nothing: the term is stated in the conversation and handed to a **carrier** that takes it to the worktree which applies it. See [Where the writes land](#where-the-writes-land).
 
 ## When to reach for it
 
-Type `/domain-modeling`, or the agent reaches for it automatically when a task fits. In practice, automatic invocation is the weakest part of the skill. When `grill-with-docs` or `wayfinder` say to load it, models often load `grilling` and skip this one. If a grilling session runs and `GLOSSARY.md` is unchanged at the end, that is what happened. Invoke it by name alongside the other skill.
+Type `/domain-modeling`, or the agent reaches for it automatically when a task fits. In practice, automatic invocation is the weakest part of the skill. When `grill-with-docs` or `wayfinder` say to load it, models often load `grilling` and skip this one. If a grilling session runs and never once stops you on a word, never states a settled term, and names no carrier at the end, that is what happened. Invoke it by name alongside the other skill.
 
 Reach for it when the *words* are the problem:
 
@@ -30,6 +32,18 @@ None up front. The skill writes into two places and creates both lazily:
 
 Nothing needs to exist before you start, and the skill creates nothing in advance.
 
+## Where the writes land
+
+A **model change** — a settled term, an ADR — belongs in the same commit as the work that uses it, which is almost never the checkout you are designing in. So the skill picks its target by where the session is running:
+
+| Where you are | What it does |
+| --- | --- |
+| In a linked worktree (a `claude -w` session, a build in progress) | Writes the file now. That branch carries it. |
+| In your main checkout, with work to follow | Writes nothing. States the entry — the term, its definition, and the definition it replaces — and names its **carrier**: the spec's `## Model changes` section, the ticket, or the conversation. The worktree that applies the carrier makes the edit. |
+| In your main checkout, with the decision as the whole deliverable | Calls [worktree](worktree.md), writes the files there, and finishes as a docs-only PR. |
+
+A stated but unwritten entry is **pending**, and it travels verbatim, because the agent that applies it was not in the conversation that settled it. Two parallel sessions that both coin a term produce two PRs that both edit `GLOSSARY.md`, and git raises the conflict at merge time, which is the one place both definitions are visible. That is why each entry quotes the definition it replaces.
+
 ## Two artifacts, two bars
 
 The glossary and the ADR have different bars. Most of the trouble with this skill comes from mixing them up.
@@ -38,7 +52,7 @@ The glossary and the ADR have different bars. Most of the trouble with this skil
 | --- | --- | --- |
 | Holds | Terms. What a thing **is**, in one or two sentences, with rejected synonyms under `_Avoid_` | One decision, in one to three sentences: context, choice, reason |
 | Bar to write | A vague term became canonical | **All three**: hard to reverse, surprising without context, the result of a real trade-off |
-| Written | Inline, the moment the term is settled | Offered, not assumed |
+| Settled | The moment the term becomes canonical | Offered, not assumed |
 | Never holds | Implementation details, a spec, a scratch pad, general programming concepts | A diary of every choice made this session |
 
 Miss any one of the ADR's three tests and there is no ADR. An easily-reversed decision will just get reversed; an unsurprising one is nobody's question; one with no real alternative records that you did the obvious thing.
@@ -74,7 +88,9 @@ No, and there is no plan for a skill that does. A domain language you do not und
 ## It's working if
 
 - It stops you mid-sentence to ask which of two things you meant, instead of picking one and moving on.
-- `GLOSSARY.md` changes **during** the conversation, not in a burst at the end.
+- Terms arrive **during** the conversation, one at a time, not in a burst at the end.
+- Designing from your main checkout leaves `git status` clean, and each settled term is read back to you with the carrier that will apply it.
+- The same session inside a worktree edits `GLOSSARY.md` directly, with no carrier talk.
 - It refuses to write an ADR for something you could undo tomorrow, and says which of the three tests failed.
 - New entries define what a thing *is* in one or two sentences and name the words you are giving up under `_Avoid_`.
 - It quotes your code back at you when your code and your sentence disagree.

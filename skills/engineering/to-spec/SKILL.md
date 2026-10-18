@@ -62,6 +62,29 @@ Do NOT include specific file paths or code snippets. They may end up being outda
 
 Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it within the relevant decision and note briefly that it came from a prototype. Trim to the decision-rich parts, not a working demo, just the important bits.
 
+## Model changes
+
+Every **pending** model change the conversation produced: a glossary term, an ADR, an avatar, a journey. The spec is their **carrier** — the worktree that implements it applies them, so they land in the same PR as the code that uses them. Omit the section when there are none, and each subsection when it is empty.
+
+Each entry names the file it lands in, gives its full text, and quotes the text it replaces, so a merge conflict with a parallel spec resolves with both definitions in view. Verbatim, never paraphrased: the agent that applies it was not in the conversation that settled it.
+
+<model-changes-example>
+
+### Glossary terms
+
+- **Encounter** → `GLOSSARY.md`. A single attended appointment, from check-in to discharge.
+  Replaces: "Encounter: any visit record."
+
+### ADRs
+
+- `docs/adr/0007-encounters-not-visits.md` — <the full ADR body, in ADR-FORMAT.md's shape>
+
+### Product model
+
+- `docs/product/journeys/book-followup.md` — new journey, <the full file>
+
+</model-changes-example>
+
 ## Testing Decisions
 
 A list of testing decisions that were made. Include:
