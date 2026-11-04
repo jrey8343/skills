@@ -1,17 +1,20 @@
 # jrey8343/skills
 
-Bespoke product-engineering skills that Matt Pocock's skills don't cover: product modeling, event storming, Deciders, architecture house style and audits. A project pins this repo at a commit next to [mattpocock/skills](https://github.com/mattpocock/skills) and picks the skills it needs. In a [Fabrik](https://github.com/jrey8343/fabrik) Product repo, the Kit config names them per role ([fabrik#71](https://github.com/jrey8343/fabrik/issues/71)).
+Product-engineering skills that Matt Pocock's skills don't cover: audits and code quality, event storming and Deciders, and product modeling. A project pins this repo at a commit next to [mattpocock/skills](https://github.com/mattpocock/skills) and picks the skills it needs. In a [Fabrik](https://github.com/jrey8343/fabrik) Product repo, the Kit config names them per role ([fabrik#71](https://github.com/jrey8343/fabrik/issues/71)).
 
 > **Being rebuilt.** The repo was archived while these skills lived in forge. It's now emptied and being refilled skill by skill. Nothing is installable yet. Don't install an older commit.
 
 ## Scope
 
-**In:** skills with no counterpart in Matt's set, which stay architecture- and project-agnostic, apart from the architecture stances they name outright.
+Each candidate skill goes to the first home that fits:
 
-**Out:**
-- **Forks of Matt's skills.** Use his directly. When something here needs one of his, it calls it by name. A skill here never reuses one of his names, because both install into the same `.claude/skills/`.
-- **Operating a delivery loop** (labels, PRs, worktrees, dispatch). Fabrik owns that.
-- **Anything specific to one product or company.**
+1. **Removed**, if it works against the strategy: a skill that acts on the backlog or the code outside the delivery loop.
+2. **Matt's set**, if he covers it. Use his directly, unforked. A skill here calls his by name and never reuses one of his names, because both install into the same `.claude/skills/`.
+3. **Fabrik**, only if it's about running the Loop (labels, PRs, worktrees, Dispatch).
+4. **This repo**, if it's reusable practice Matt doesn't cover.
+5. **The codebase's own docs** (`CODING_STANDARDS.md`, ADRs, `.fabrik/<role>.md`), if it's bespoke to one product, stack layout or company. It becomes a skill here only once a second project needs it.
+
+**Audits** run in the repo's own CI, set up by `schedule-audits`, not by Fabrik. They file issues with an `audit:*` label and no state label, so the repo's Triage decides what's ready; headless runs never edit code or open PRs.
 
 ## The plan
 
@@ -19,31 +22,27 @@ Each skill has an issue. `port` brings it back from forge, `add` writes a new on
 
 **First:** [Repo tooling: layout, a manifest Fabrik can pin, lint and CI](https://github.com/jrey8343/skills/issues/8)
 
-**Architecture**
-- [Port house-style as the architecture skill](https://github.com/jrey8343/skills/issues/9)
-- [Add a Deciders reference for event-sourced code](https://github.com/jrey8343/skills/issues/10)
-- [Add event-storming](https://github.com/jrey8343/skills/issues/11)
-
-**Product**
-- [Port product-modeling](https://github.com/jrey8343/skills/issues/12)
-- [Port discover-domain](https://github.com/jrey8343/skills/issues/13)
-- [Port project-docs](https://github.com/jrey8343/skills/issues/14)
-- [Port roadmap](https://github.com/jrey8343/skills/issues/15)
-- [Port synthesize-backlog](https://github.com/jrey8343/skills/issues/16)
-
-**Audits**
+**`quality/`**
 - [Port report-findings, the shared audit base](https://github.com/jrey8343/skills/issues/17)
+- [Add schedule-audits: run audits on a schedule in the repo's CI](https://github.com/jrey8343/skills/issues/28)
 - [Port security-audit](https://github.com/jrey8343/skills/issues/18)
 - [Port test-audit](https://github.com/jrey8343/skills/issues/19)
 - [Port perf-audit](https://github.com/jrey8343/skills/issues/20)
 - [Port docs-audit](https://github.com/jrey8343/skills/issues/21)
 - [Port prune-docs](https://github.com/jrey8343/skills/issues/22)
+
+**`architecture/`**
+- [Add the deciders skill for event-sourced code](https://github.com/jrey8343/skills/issues/10)
+- [Add event-storming](https://github.com/jrey8343/skills/issues/11)
+
+**`product/`**
+- [Port product-modeling](https://github.com/jrey8343/skills/issues/12)
+- [Port discover-domain](https://github.com/jrey8343/skills/issues/13)
+- [Port project-docs](https://github.com/jrey8343/skills/issues/14)
 - [Port product-review](https://github.com/jrey8343/skills/issues/23)
 - [Port persona-review](https://github.com/jrey8343/skills/issues/24)
 
-**To decide:** [Port or drop: adopt-1password and adopt-sentry](https://github.com/jrey8343/skills/issues/25)
-
-**Dropped:** [Drop: skills Matt's set or Fabrik already covers, and forge-only ones](https://github.com/jrey8343/skills/issues/26)
+**Dropped:** [skills Matt's set or Fabrik covers, bespoke ones, and ones against the strategy](https://github.com/jrey8343/skills/issues/26): house-style (per repo), roadmap, synthesize-backlog, adopt-sentry, adopt-1password, and forge-only ones.
 
 ## Porting rules
 
