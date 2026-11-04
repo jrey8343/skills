@@ -1,5 +1,7 @@
 # Credits
 
+> **Being rebuilt.** The tables below record the forge-era collection this repo held before it was archived. As each skill comes back it is re-recorded here; until then, treat these rows as history.
+
 This collection is a fork of [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, Copyright (c) 2026 Matt Pocock), based on commit [`49dd158`](https://github.com/mattpocock/skills/tree/49dd158d1076134a641b33efb035946536778336) (v1.3.1). The upstream license notice is kept in [LICENSE](LICENSE).
 
 `scripts/sync-upstream.sh` re-applies the mechanical renames and diffs upstream changes for the forked skills. The semantic modifications listed below must be merged by hand.
