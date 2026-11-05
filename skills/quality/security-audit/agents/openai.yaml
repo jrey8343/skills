@@ -1,0 +1,5 @@
+interface:
+  display_name: "Security Audit"
+  short_description: "Audit the whole attack surface and file ranked findings"
+policy:
+  allow_implicit_invocation: false

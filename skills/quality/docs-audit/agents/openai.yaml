@@ -1,0 +1,5 @@
+interface:
+  display_name: "Docs Audit"
+  short_description: "Find missing and drifted docs against the code and journeys"
+policy:
+  allow_implicit_invocation: false

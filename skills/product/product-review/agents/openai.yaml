@@ -1,0 +1,5 @@
+interface:
+  display_name: "Product Review"
+  short_description: "PM and designer verdict on whether a feature earns its place"
+policy:
+  allow_implicit_invocation: false

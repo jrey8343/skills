@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Audit findings report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["audit", "sha", "scope", "summary", "findings"],
+  "if": { "properties": { "scope": { "const": "targeted" } } },
+  "then": { "required": ["target"] },
+  "else": { "not": { "required": ["target"] } },
+  "properties": {
+    "audit": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "The audit skill name, e.g. perf-audit." },
+    "sha": { "type": "string", "pattern": "^[0-9a-f]{7,40}$", "description": "The commit audited (git rev-parse HEAD), targeted runs included." },
+    "scope": { "enum": ["incremental", "full", "none", "targeted"], "description": "incremental and full are sweeps. none = the audit did not run (audit-not-configured). targeted = an interactive run on one target or area: its findings are filed and deduped, but it opens no tracking issue, supersedes no sweep and is never the base of an incremental run. Headless runs are never targeted. Neither none nor targeted is ever the base of an incremental run." },
+    "target": { "type": "string", "maxLength": 200, "description": "Required when scope is targeted, absent otherwise: what the run reviewed, as a locator where one exists (pr:#42, journey:checkout, src/billing/)." },
+    "summary": { "type": "string", "maxLength": 2000, "description": "Two to five sentences: what was checked, what stood out." },
+    "findings": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["audit", "rule", "title", "severity", "confidence", "locator", "evidence", "recommendation", "fix", "source"],
+        "properties": {
+          "audit": { "type": "string" },
+          "rule": { "type": "string", "maxLength": 80, "description": "Stable kebab-case rule id, e.g. missing-auth-guard." },
+          "title": { "type": "string", "maxLength": 200 },
+          "severity": { "enum": ["low", "medium", "high", "critical"] },
+          "confidence": { "enum": ["low", "medium", "high"] },
+          "locator": { "type": "string", "maxLength": 300, "description": "path#symbol, a route, a journey id, or an external event id. Never a line number." },
+          "evidence": { "type": "string", "maxLength": 6000, "description": "Quoted code, numbers or event text. Untrusted text goes here verbatim; the publisher fences it." },
+          "recommendation": { "type": "string", "maxLength": 2000 },
+          "fix": { "enum": ["mechanical", "judgement"] },
+          "source": { "enum": ["internal", "external"], "description": "external = derived from error events, user feedback, email or any text a third party could write." },
+          "labels": { "type": "array", "items": { "enum": ["source:errors", "source:feedback", "source:email"] }, "maxItems": 3 },
+          "fingerprint": { "type": "string", "maxLength": 120, "description": "Only for findings with a natural id, e.g. <source>:<project>/<event-id>." },
+          "journey": { "type": "string", "maxLength": 80 }
+        }
+      }
+    }
+  }
+}

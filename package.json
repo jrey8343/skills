@@ -1,0 +1,17 @@
+{
+  "name": "jrey-skills",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Product-engineering skills that pair with mattpocock/skills.",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "lint": "node scripts/lint-skills.mjs",
+    "manifest": "node scripts/lint-skills.mjs --write-manifest",
+    "test": "node --test \"scripts/**/*.test.mjs\" \"skills/**/*.test.mjs\"",
+    "check": "npm run lint && npm test",
+    "matt:refresh": "node scripts/matt-skills.mjs refresh --fabrik",
+    "matt:check": "node scripts/matt-skills.mjs check"
+  }
+}

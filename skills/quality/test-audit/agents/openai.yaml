@@ -1,0 +1,5 @@
+interface:
+  display_name: "Test Audit"
+  short_description: "File the journeys and risky modules that lack the tests they need"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,17 @@
+{
+  "name": "jrey8343",
+  "owner": {
+    "name": "Jared Reyes",
+    "url": "https://github.com/jrey8343"
+  },
+  "description": "Jared Reyes' product-engineering skills, as an installable Claude Code plugin.",
+  "plugins": [
+    {
+      "name": "jrey-skills",
+      "source": "./",
+      "description": "Scheduled audits that file deduped GitHub issues, event storming and Deciders, and product modeling. Pairs with mattpocock/skills.",
+      "category": "engineering",
+      "keywords": ["engineering", "skills", "audits", "event-storming", "deciders", "product"]
+    }
+  ]
+}

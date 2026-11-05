@@ -1,0 +1,5 @@
+interface:
+  display_name: "Discover Domain"
+  short_description: "Infer the product model from the code, then grill the gaps"
+policy:
+  allow_implicit_invocation: false
