@@ -1,0 +1,36 @@
+{
+  "name": "jrey-skills",
+  "version": "0.2.0",
+  "description": "Product-engineering skills Matt Pocock's set doesn't cover: scheduled audits that file deduped GitHub issues, event storming and Deciders, and product modeling.",
+  "author": {
+    "name": "Jared Reyes",
+    "url": "https://github.com/jrey8343"
+  },
+  "homepage": "https://github.com/jrey8343/skills",
+  "repository": "https://github.com/jrey8343/skills",
+  "license": "MIT",
+  "keywords": [
+    "engineering",
+    "skills",
+    "audits",
+    "event-storming",
+    "deciders",
+    "product"
+  ],
+  "skills": [
+    "./skills/architecture/deciders",
+    "./skills/architecture/event-storming",
+    "./skills/product/discover-domain",
+    "./skills/product/persona-review",
+    "./skills/product/product-modeling",
+    "./skills/product/product-review",
+    "./skills/product/project-docs",
+    "./skills/quality/docs-audit",
+    "./skills/quality/perf-audit",
+    "./skills/quality/prune-docs",
+    "./skills/quality/report-findings",
+    "./skills/quality/schedule-audits",
+    "./skills/quality/security-audit",
+    "./skills/quality/test-audit"
+  ]
+}
