@@ -1,0 +1,3 @@
+interface:
+  display_name: "Deciders"
+  short_description: "Write event-sourced logic as decide, evolve and an initial state"
