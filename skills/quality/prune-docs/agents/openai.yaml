@@ -1,0 +1,5 @@
+interface:
+  display_name: "Prune Docs"
+  short_description: "Slim agent docs to an index and move history to its home"
+policy:
+  allow_implicit_invocation: false
