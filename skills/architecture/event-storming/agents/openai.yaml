@@ -1,0 +1,5 @@
+interface:
+  display_name: "Event Storming"
+  short_description: "Storm domain events into contexts and terms"
+policy:
+  allow_implicit_invocation: false
